@@ -26,7 +26,7 @@ typedef signed int sint32;
 
 #define FAST_SPEED_INIT     0x6D6 //70% 1750 //65% 1625
 #define MED_SPEED_INIT      0x4E2 //50% 1250
-#define SLOW_SPEED_INIT     0x258 //20% 500 ~~
+#define SLOW_SPEED_INIT     675 //20% 500
 
 /// TEST FOR MIN AND MAX PWM VALUES
 #define MAX_SPEED_PWM       0x6D6
@@ -61,7 +61,7 @@ void ICInit(void);
 //
 //****************************************************************************
 void MotorControl( uint32 LSpeed, uint32 RSpeed, uint8 LDirection, uint8 RDirection );
-uint16 P( uint16 TrgtEncoder, uint16 ActlEncoder, uint8 Motor );
+uint16 P( uint16 ActlEncoder, uint8 Motor );
 void SetSpeed( uint32 Speed);
 void SensorCalc();
 void DebugFlag();

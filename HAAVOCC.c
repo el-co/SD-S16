@@ -73,7 +73,7 @@ void main(void)
                 if ( AdjustSpeedFlag != 0 )
                 {
 //                    LATAbits.LATA0 = 0;     
-                    MotorControl( Motor2Speed, Motor1Speed, FWRD, FWRD );
+                    MotorControl( Motor1Speed, Motor2Speed, FWRD, FWRD );
                     AdjustSpeedFlag = 0;
                 }
                 if ( SensorEvalFlag != 0 )
@@ -183,87 +183,34 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
     
     M2Distance += M2PosEdgeCnt;    
     M1Distance += M1PosEdgeCnt;    
-    
+
+    distanceDiff = M1Distance - M2Distance;    
     /// fix encoders
     if ( (State == NAVIGATE) && (AdjustSpeedFlag ==  0) && (M1PosEdgeCnt != 0) && (M2PosEdgeCnt != 0) )
     {
-    
-        if (CatchUp++ > 2)
+        if (CatchUp++ > 5)
         {
 //            if (TTFlag != 0 || Fixed == 100)
-//            if (Fixed == 200)            
-//            {
-//                TTFlag = 0; 
-//                DebugFlag(); 
-//                LATAbits.LATA0 ^= 1;
-//            }
-//                
-//                DebugFlag();
-//                LATAbits.LATA0 ^= 1;
-//                LeftSpeed = P(IC2PosEdgeCnt, 1);
-//                RightSpeed = P(IC3PosEdgeCnt, 0);   
-//            
-//                DebugFlag();                 
-//                distanceDiff = M1Distance - M2Distance;     
             
-            if ( (M1PosEdgeCnt > (TargetEncoder-5)) && (M2PosEdgeCnt > (TargetEncoder-5)) 
-                    && (M1PosEdgeCnt < (TargetEncoder+5)) && (M2PosEdgeCnt < (TargetEncoder+5)) )
-            {                
-                if (TurnFlag++ > 5)
+            if ( ((M2PosEdgeCnt - M1PosEdgeCnt) < 2) || ((M1PosEdgeCnt - M2PosEdgeCnt) < 2) )
+            {
+                M1Adjust++;
+                     
+                if (M1Adjust == 100)
                 {
-                    DebugFlag();                
-                    distanceDiff = M1Distance - M2Distance;
-                    TurnFlag = 0;
+//                    DebugFlag();                    
+                    M1Adjust = 0;
+                    LATAbits.LATA0 ^= 1;                     
                 }
             }
-
             
-//            if ( (StepEncoder < TargetEncoder) && (StepCnt++ > 20) )
-//            {
-//                StepCnt = 0;
-//                StepEncoder += STEP_SPEED;
-//                if (StepEncoder >= TargetEncoder) 
-//                {
-//                    StepEncoder = TargetEncoder;
-//                }
-//                Motor2Speed = P(StepEncoder, M2PosEdgeCnt, 1);
-//                Motor1Speed = P(StepEncoder, M1PosEdgeCnt, 0);                 
-//            }
-//            else 
-//            {
-//                Motor2Speed = P(TargetEncoder, M2PosEdgeCnt, 1);
-//                Motor1Speed = P(TargetEncoder, M1PosEdgeCnt, 0);  
-//            }
-            distanceDiff = M1Distance - M2Distance;
-                    
-            if (distanceDiff > 5) // Motor 1 faster
-            {  
-                Motor2Speed = P(TargetEncoder-1, M2PosEdgeCnt, 1);
-                Motor1Speed = P(TargetEncoder+1, M1PosEdgeCnt, 0);     
-                M1Faster = 1;
-                M2Faster = 0;                
-            }
-            else if (distanceDiff < -5) // Motor 2 faster
-            {                                             
-                Motor2Speed = P(TargetEncoder+1, M2PosEdgeCnt, 1);
-                Motor1Speed = P(TargetEncoder-1, M1PosEdgeCnt, 0);     
-                M1Faster = 0;
-                M2Faster = 1; 
-            }            
-            else 
-            {
-                Motor2Speed = P(TargetEncoder, M2PosEdgeCnt, 1);
-                Motor1Speed = P(TargetEncoder, M1PosEdgeCnt, 0);                 
-            }
-                      
+            Motor2Speed = P(M2PosEdgeCnt, 1);
+            Motor1Speed = P(M1PosEdgeCnt, 0);  
             Fixed++;
-            
             AdjustSpeedFlag =  1;
         }
-    }
-   
-   
-//    LATAbits.LATA0 ^= 1;     
+    }   
+       
     M2PosEdgeCnt = 0;
     M1PosEdgeCnt = 0;  
 }

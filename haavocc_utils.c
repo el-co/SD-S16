@@ -308,42 +308,45 @@ void MotorControl(uint32 M1Speed, uint32 M2Speed, uint8 LDirection, uint8 RDirec
 // Return:      PWM - Adjusted PWM value
 //
 //****************************************************************************
-uint16 P( uint16 TrgtEncoder, uint16 ActualEncoder, uint8 Motor)
+uint16 P( uint16 ActualEncoder, uint8 Motor)
 {
-    float KpM2 = 0.75;
-    float KpM1 = 0.05;
-    float KiM1 = 0.0002;  
-    float KiM2 = 0.0001;    
-    float Kp = 0.0001;
-    
-    float Ki = 0.0001;     
+//    float KpM2 = 0.5;
+//    float KiM2 = 0.005;
+//    float KpM1 = 0.4;
+//    float KiM1 = 0.005;  
+    float Kp = 0.4;
+    float Ki = 0.001;     
     float dt = 0.08;
     
     sint32 error;
+    sint32 val;
     uint16 PWM;
-    float Integral;
+    sint32 Integral;
     
-    error = TrgtEncoder - ActualEncoder;
+    error = TargetEncoder - ActualEncoder;
     Integral = (Motor == 0)? M1Integral: M2Integral;
-    Kp = (Motor == 0)? KpM1: KpM2; 
-//    Ki = (Motor == 0)? KiM1: KiM2;     
+//    Kp = (Motor == 0)? KpM1: KpM2;
+//    Ki = (Motor == 0)? KiM1: KiM2;
     
     PWM = (Kp * error) + (Ki * Integral);
-   
-//    if ((Ki * Integral)>=1)
-//    {
-//        DebugFlag();           
-//        Integral = 0;  
+    
+//    if (error >= 0) {
+//        val = (error >= 20)? KP_1: (error >= 14)? KP_2: (error >= 9)? KP_3: (error >= 5)? KP_4: (error >= 3)? KP_5 : KP_6;
 //    }
+//    else {
+//        val = (error <= -20)? -KP_1: (error <= -14)? -KP_2: (error <= -9)? -KP_3: (error <= -5)? KP_4: (error <= -3)? -KP_5 : -KP_6;
+//    }
+// 
+
     
     LastEncoderM1 = (Motor == 0)? LastEncoderM1: ActualEncoder;
     LastEncoderM2 = (Motor != 0)? LastEncoderM2: ActualEncoder;    
-//    
-//    LastErrorM1 = (Motor == 0)? LastErrorM1: error;
-//    LastErrorM2 = (Motor != 0)? LastErrorM2: error;
-//         
-//    LastAdjustM1 = (Motor == 0)? LastAdjustM1: PWM;
-//    LastAdjustM2 = (Motor != 0)? LastAdjustM2: PWM;
+    
+    LastErrorM1 = (Motor == 0)? LastErrorM1: error;
+    LastErrorM2 = (Motor != 0)? LastErrorM2: error;
+         
+    LastAdjustM1 = (Motor == 0)? LastAdjustM1: val;
+    LastAdjustM2 = (Motor != 0)? LastAdjustM2: val;
     
     PWM += (Motor == 0)? OC3RS: OC4RS; 
     
@@ -383,12 +386,12 @@ void SetSpeed( uint32 Speed)
     {
         case(OFF):
             MotorControl( 0, 0, FWRD, FWRD );                             
-            TargetEncoder = 0;
-            break;           
-        case(SLOW):         
-            MotorControl( SLOW_SPEED_INIT-50, SLOW_SPEED_INIT+80, FWRD, FWRD );                            
-            StepEncoder = TargetEncoder + STEP_SPEED;    
-            TargetEncoder = SLOW_SPEED;
+//            TargetEncoder = 0;
+            break;
+        case(SLOW):
+            // 677 756
+            MotorControl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+80, FWRD, FWRD );                            
+            TargetEncoder = SLOW_SPEED;             
             break;
         case(MED):
             MotorControl( MED_SPEED_INIT, MED_SPEED_INIT+20, FWRD, FWRD );                            
