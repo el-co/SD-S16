@@ -25,32 +25,22 @@
 void main(void)
 {
     Init();
-//    ADCCNT = 0; 
     M1Integral = 0;
     M2Integral = 0;
-    ADCCH = 5;     
+    
     Hz = 0.02;
     TM364PS = 625000;
     Input = TM364PS * Hz;
     USSensorFlag = 0;
-    TestTime = 5 * 16000; //15 seconds
-    TTCnt = 0;
-    TTFlag = 0; 
     Fixed = 0;
-    LastErrorM1 = 0;
-    LastErrorM2 = 0;
-    
+    SensorCnt = 0;
     M1Distance = 0;
     M2Distance = 0;    
     TurnFlag = 0;
+
+    SpeedUp = 0;
     
-    IC2int = 0;
-    IC3int = 0;
-    IC4int = 0;    
-    StepCnt = 0;    
-    cnt=0;
-    
-    LATAbits.LATA0 = 1; 
+    LATAbits.LATA0 = 0; 
     while(1)
     { 
         switch(State)
@@ -64,7 +54,7 @@ void main(void)
                 LATBbits.LATB4 = 1;       // pin 11
                 LATBbits.LATB7 = 1;       // pin 16
                 LATBbits.LATB8 = 0;       // pin 17                              
-                SetSpeed(SLOW);  
+                SetSpeed( SLOW );  
                 CatchUp = 0;
                 State = NAVIGATE; 
                 break;
@@ -73,7 +63,8 @@ void main(void)
                 if ( AdjustSpeedFlag != 0 )
                 {
 //                    LATAbits.LATA0 = 0;     
-                    MotorControl( Motor1Speed, Motor2Speed, FWRD, FWRD );
+                    MotorSpeedCtrl( Motor1Speed, Motor2Speed );
+                    
                     AdjustSpeedFlag = 0;
                 }
                 if ( SensorEvalFlag != 0 )
@@ -125,18 +116,10 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
 {
     IFS0bits.T2IF = 0;      // Turn Flag Off
     
-    if (TEST2++ > 400)
-    {
-        TEST2 = 0;
-    }
 //    LATAbits.LATA0 ^= 1; 
-  
-//    ADCCNT = 0;
-    TTCnt++;
-    if (TTCnt == TestTime)
+    if ( (TurnFlag == 1) && (M1PosEdgeCnt >= TurnCnt) && (M2PosEdgeCnt >= TurnCnt) )
     {
-        TTFlag = 1;
-        TTCnt = 0;
+        SetDirection( FORWARD );
     }
 } 
 
@@ -175,11 +158,21 @@ void __ISR (12, IPL2SOFT) Timer3IntHandler(void)
 void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 {
     IFS0bits.T4IF = 0;      // Turn Flag Off
-    LATAbits.LATA0 ^= 1;      
-    if (TEST4++ > 100)
-    {
-        TEST4 = 0;
-    }  
+//    LATAbits.LATA0 ^= 1;      
+//    if (TEST4++ > 125 && SpeedUp == 0)
+//    {
+//        DebugFlag();     
+//        SetSpeed(MED); 
+//        LATAbits.LATA0 = 1;  
+//        CatchUp=0;
+//        M1Distance=0;
+//        M2Distance=0;
+//        SpeedUp = 1;
+//        TEST4 = 0;
+//        M1PosEdgeCnt=0;
+//        M2PosEdgeCnt=0;  
+//        Fixed = 0;
+//    }  
     
     M2Distance += M2PosEdgeCnt;    
     M1Distance += M1PosEdgeCnt;    
@@ -188,31 +181,55 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
     /// fix encoders
     if ( (State == NAVIGATE) && (AdjustSpeedFlag ==  0) && (M1PosEdgeCnt != 0) && (M2PosEdgeCnt != 0) )
     {
-        if (CatchUp++ > 5)
+        if (CatchUp++ > 3)
         {
 //            if (TTFlag != 0 || Fixed == 100)
-            
-            if ( ((M2PosEdgeCnt - M1PosEdgeCnt) < 2) || ((M1PosEdgeCnt - M2PosEdgeCnt) < 2) )
+//            if (SpeedUp != 0)
+//            {
+//                if ((((M2PosEdgeCnt - M1PosEdgeCnt) < 2) || ((M1PosEdgeCnt - M2PosEdgeCnt) < 2)) )
+//                {
+//                    M1Adjust++;
+//
+//                    if (M1Adjust == 100)
+//                    {
+//                        DebugFlag();                    
+//                        M1Adjust = 0;
+//                        LATAbits.LATA0 = 1;                     
+//                    }
+//                }
+//            }
+            if (M1Faster == 1 || M2Faster ==1)  
             {
-                M1Adjust++;
-                     
-                if (M1Adjust == 100)
-                {
-//                    DebugFlag();                    
-                    M1Adjust = 0;
-                    LATAbits.LATA0 ^= 1;                     
-                }
+                DebugFlag();  
+                M1Faster = 0;
+                distanceDiff = M1Distance - M2Distance;                
+                M2Faster = 0;
             }
+            distanceDiff = M1Distance - M2Distance;    
+            Motor2Speed = PI(M2PosEdgeCnt, 1);
+            Motor1Speed = PI(M1PosEdgeCnt, 0);                
+        
+            if (distanceDiff > 15) // Motor 1 faster
+            {  
+                Motor2Speed += 1;
+                M1Faster = 1;
+                M2Faster = 0;                
+            }
+            else if (distanceDiff < -15) // Motor 2 faster
+            {                                             
+                Motor1Speed += 1;
+                M1Faster = 0;
+                M2Faster = 1; 
+            }                    
             
-            Motor2Speed = P(M2PosEdgeCnt, 1);
-            Motor1Speed = P(M1PosEdgeCnt, 0);  
             Fixed++;
             AdjustSpeedFlag =  1;
         }
     }   
-       
+     
     M2PosEdgeCnt = 0;
     M1PosEdgeCnt = 0;  
+     
 }
 
 //****************************************************************************
@@ -243,7 +260,6 @@ void __ISR (23, IPL3SOFT) ADCIntHandler(void)
 //   3V       930
 //   3.3V     1023       
    
-//   ADCCNT++;
    SensorEvalFlag = 1;
    
    

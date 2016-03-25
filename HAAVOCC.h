@@ -24,18 +24,21 @@ typedef signed short sint16;
 typedef unsigned int uint32;
 typedef signed int sint32;
 
-#define FAST_SPEED_INIT     0x6D6 //70% 1750 //65% 1625
-#define MED_SPEED_INIT      0x4E2 //50% 1250
-#define SLOW_SPEED_INIT     675 //20% 500
+#define MED_SPEED_INIT              1200 
+#define SLOW_SPEED_INIT             675 
+#define SUPER_SLOW_SPEED_INIT       505 
 
 /// TEST FOR MIN AND MAX PWM VALUES
-#define MAX_SPEED_PWM       0x6D6
-#define MIN_SPEED_PWM       0xC8
+#define MAX_SPEED_PWM       1500
+#define MIN_SPEED_PWM       300
 
-#define FAST_SPEED  276
-#define MED_SPEED   200
-#define SLOW_SPEED  90
-#define STEP_SPEED  50
+
+#define MED_SPEED           150
+#define SLOW_SPEED          90
+#define SUPER_SLOW_SPEED    70
+
+#define RIGHT_TURN          650
+#define FULL_TURN           1300
 //****************************************************************************
 //
 //
@@ -60,9 +63,11 @@ void ICInit(void);
 //                          Motor Control Functions     
 //
 //****************************************************************************
-void MotorControl( uint32 LSpeed, uint32 RSpeed, uint8 LDirection, uint8 RDirection );
-uint16 P( uint16 ActlEncoder, uint8 Motor );
+void MotorSpeedCtrl( uint32 LSpeed, uint32 RSpeed );
+void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection);
+uint16 PI( uint16 ActlEncoder, uint8 Motor );
 void SetSpeed( uint32 Speed);
+void SetDirection( uint32 Direction);
 void SensorCalc();
 void DebugFlag();
 
@@ -84,15 +89,24 @@ enum HAAVOCC_STATES
 enum SPEEDS
 {
     OFF,
+    SUPER_SLOW,
     SLOW,
     MED,
-    FAST
 };
 
 enum DIRECTION
 {
-    RVRS = 0,
-    FWRD = 1
+    FORWARD,
+    REVERSE,
+    LEFT_90,
+    RIGHT_90,
+    HALF_TURN
+};
+
+enum WHEEL_DIRECTION
+{
+    RVS = 0,
+    FWD = 1
 };
 
 //****************************************************************************
@@ -128,61 +142,33 @@ uint32 PersistantBuffer;
 uint8 AdjustSpeedFlag;
 uint16 Motor2Speed;
 uint16 Motor1Speed;
-uint32 StepEncoder;
 uint32 TargetEncoder;
-uint32 StepCnt;
 
 float M1Integral;
 float M2Integral;
 // DEBUG
-uint32 ADCCNT;
-uint32 TEST2;
 uint32 TEST4;
-uint32 TestTime;
-uint32 TTCnt;
-uint32 TTFlag;
-uint32 M1PWM;
-uint32 M2PWM;
-uint32 TE;
 uint32 CatchUp;
 uint32 Fixed;
-sint32 LastErrorM1;
-sint32 LastErrorM2;
-sint32 LastAdjustM1;
-sint32 LastAdjustM2;
-sint32 LastEncoderM1;
-sint32 LastEncoderM2;
 
-uint8 M1Adjust;
-uint8 M2Adjust;
-
-
-uint8 ADCCH;
- 
 uint32 M1Distance;
 uint32 M2Distance;
 uint8 TurnFlag;
+uint32 TurnCnt;
 
 uint8 M2Faster;
 uint8 M1Faster;
 
-uint8 T2int;
-uint8 T3int;
-uint8 T4int;
-uint8 AD1int;
-uint8 IC2int;
-uint8 IC3int;
-uint8 IC4int;
-
 // Sensor
 uint16 i;
-uint32 cnt;
 float val;
+uint32 SensorCnt;
 float Inches[40];
 uint16 ADC10[40];
 
 float inch;
 uint32 distance;
 sint32 distanceDiff;
+uint8 SpeedUp;
 
 #endif	/* HAVVOCC_H */

@@ -32,8 +32,10 @@ void Init(void)
     ADCInit();
     ICInit();
     PWMInit();
-    
+    SetDirection( FORWARD );
     SetSpeed( OFF );    
+    MotorSpeedCtrl( Motor1Speed, Motor2Speed );
+       
 }
 
 //****************************************************************************
@@ -273,31 +275,43 @@ void ICInit(void)
 }
 
 //****************************************************************************
-// Function:    Init
+// Function:    MotorSpeedCtrl
 //
 // Description: Initializes variables and other Init functions.
 //
 // Params:      LSpeed - PWM Duty cycle to control left motor
 //              RSpeed - PWM Duty cycle to control right motor
-//              LDirection - Sets direction of left motor
-//              RDirection - Sets direction of right motor
 //
 // Return:      void
 //
 //****************************************************************************
-void MotorControl(uint32 M1Speed, uint32 M2Speed, uint8 LDirection, uint8 RDirection)
-{
-    LATAbits.LATA4 = (LDirection == 0)? 1: 0;       // pin 12
-    LATBbits.LATB4 = LDirection;                    // pin 11
-    LATBbits.LATB7 = (RDirection == 0)? 1: 0;       // pin 16
-    LATBbits.LATB8 = RDirection;                    // pin 17
-    
+void MotorSpeedCtrl( uint32 M1Speed, uint32 M2Speed )
+{    
     OC3RS = M1Speed; // Slower motor            
     OC4RS = M2Speed;  
 }
 
 //****************************************************************************
-// Function:    P
+// Function:    MotorDirectionCtrl
+//
+// Description: Initializes variables and other Init functions.
+//
+// Params:      LDirection - Sets direction of left motor
+//              RDirection - Sets direction of right motor
+//
+// Return:      void
+//
+//****************************************************************************
+void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection)
+{
+    LATAbits.LATA4 = (LDirection == 0)? 1: 0;       // pin 12
+    LATBbits.LATB4 = LDirection;                    // pin 11
+    LATBbits.LATB7 = (RDirection == 0)? 1: 0;       // pin 16
+    LATBbits.LATB8 = RDirection;                    // pin 17
+}
+
+//****************************************************************************
+// Function:    PI
 //
 // Description: Calculates an adjusted PWM duty cylce value based on the 
 //              actual encoder value and the target encoder value.
@@ -308,45 +322,22 @@ void MotorControl(uint32 M1Speed, uint32 M2Speed, uint8 LDirection, uint8 RDirec
 // Return:      PWM - Adjusted PWM value
 //
 //****************************************************************************
-uint16 P( uint16 ActualEncoder, uint8 Motor)
+uint16 PI( uint16 ActualEncoder, uint8 Motor)
 {
-//    float KpM2 = 0.5;
-//    float KiM2 = 0.005;
-//    float KpM1 = 0.4;
-//    float KiM1 = 0.005;  
+
     float Kp = 0.4;
     float Ki = 0.001;     
     float dt = 0.08;
     
     sint32 error;
-    sint32 val;
     uint16 PWM;
     sint32 Integral;
     
     error = TargetEncoder - ActualEncoder;
     Integral = (Motor == 0)? M1Integral: M2Integral;
-//    Kp = (Motor == 0)? KpM1: KpM2;
-//    Ki = (Motor == 0)? KiM1: KiM2;
-    
+
     PWM = (Kp * error) + (Ki * Integral);
     
-//    if (error >= 0) {
-//        val = (error >= 20)? KP_1: (error >= 14)? KP_2: (error >= 9)? KP_3: (error >= 5)? KP_4: (error >= 3)? KP_5 : KP_6;
-//    }
-//    else {
-//        val = (error <= -20)? -KP_1: (error <= -14)? -KP_2: (error <= -9)? -KP_3: (error <= -5)? KP_4: (error <= -3)? -KP_5 : -KP_6;
-//    }
-// 
-
-    
-    LastEncoderM1 = (Motor == 0)? LastEncoderM1: ActualEncoder;
-    LastEncoderM2 = (Motor != 0)? LastEncoderM2: ActualEncoder;    
-    
-    LastErrorM1 = (Motor == 0)? LastErrorM1: error;
-    LastErrorM2 = (Motor != 0)? LastErrorM2: error;
-         
-    LastAdjustM1 = (Motor == 0)? LastAdjustM1: val;
-    LastAdjustM2 = (Motor != 0)? LastAdjustM2: val;
     
     PWM += (Motor == 0)? OC3RS: OC4RS; 
     
@@ -371,7 +362,7 @@ uint16 P( uint16 ActualEncoder, uint8 Motor)
 }
 
 //****************************************************************************
-// Function:    Speed
+// Function:    SetSpeed
 //
 // Description: 
 //
@@ -385,30 +376,75 @@ void SetSpeed( uint32 Speed)
     switch(Speed)
     {
         case(OFF):
-            MotorControl( 0, 0, FWRD, FWRD );                             
-//            TargetEncoder = 0;
+            MotorSpeedCtrl( 0, 0 );                             
+            TargetEncoder = 0;
             break;
+        case(SUPER_SLOW):
+            MotorSpeedCtrl( SUPER_SLOW_SPEED_INIT, SUPER_SLOW_SPEED_INIT+45 );                            
+            TargetEncoder = SUPER_SLOW_SPEED;              
+            break;            
         case(SLOW):
             // 677 756
-            MotorControl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+80, FWRD, FWRD );                            
+            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+80 );                            
             TargetEncoder = SLOW_SPEED;             
             break;
         case(MED):
-            MotorControl( MED_SPEED_INIT, MED_SPEED_INIT+20, FWRD, FWRD );                            
+            MotorSpeedCtrl( MED_SPEED_INIT, MED_SPEED_INIT+60 );                            
             TargetEncoder = MED_SPEED;              
             break;
-        case(FAST):
-            MotorControl( FAST_SPEED_INIT, FAST_SPEED_INIT+20, FWRD, FWRD );                            
-            TargetEncoder = FAST_SPEED;              
-            break;
         default:
-            MotorControl( 0, 0, FWRD, FWRD );                             
+            MotorSpeedCtrl( 0, 0 );                             
             TargetEncoder = 0;            
             break;            
     }
 }
 
-
+//****************************************************************************
+// Function:    SetDirection
+//
+// Description: 
+//
+// Params:      Direction - Direction selection
+//
+// Return:      void
+//
+//****************************************************************************
+void SetDirection( uint32 Direction)
+{
+    switch(Direction)
+    {
+        case(FORWARD):
+                MotorDirectionCtrl( FWD, FWD );
+                TurnCnt = 0;
+                TurnFlag = 0;
+            break;
+        case(REVERSE):
+                MotorDirectionCtrl( RVS, RVS );   
+                TurnCnt = 0;
+                TurnFlag = 0;                
+            break;            
+        case(LEFT_90):
+                MotorDirectionCtrl( FWD, RVS );  
+                TurnCnt = RIGHT_TURN;
+                TurnFlag = 1;                
+            break;
+        case(RIGHT_90):
+                MotorDirectionCtrl( RVS, FWD );   
+                TurnCnt = RIGHT_TURN;
+                TurnFlag = 1;                
+            break;
+        case(HALF_TURN):
+                MotorDirectionCtrl( FWD, RVS ); 
+                TurnCnt = FULL_TURN;
+                TurnFlag = 1;               
+            break;
+        default:
+                MotorDirectionCtrl( FWD, FWD );
+                TurnCnt = 0;
+                TurnFlag = 0;         
+            break;            
+    }    
+}
 
 void SensorCalc() 
 {    
@@ -419,15 +455,15 @@ void SensorCalc()
     
 //    if (inch < 24)
 //    {
-        if (cnt == 40)
+        if (SensorCnt == 40)
         {
 //            LATAbits.LATA0 = 1;         
 //            DebugFlag();   
-            cnt = 0;
+            SensorCnt = 0;
         }
-        Inches[cnt] = inch;
-        ADC10[cnt] = AN10ADC;
-        cnt ++;
+        Inches[SensorCnt] = inch;
+        ADC10[SensorCnt] = AN10ADC;
+        SensorCnt ++;
 //    }
 }  
 
