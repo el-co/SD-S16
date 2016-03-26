@@ -466,7 +466,7 @@ void SensorCalc()
     
    }
     // analog value 942 aprox 3 inch
-    else if (i<967)
+    else if (i<967 && i>100)
     {
         SetSpeed(OFF);
         MotorSpeedCtrl( Motor1Speed, Motor2Speed );//stop
