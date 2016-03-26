@@ -24,21 +24,21 @@ typedef signed short sint16;
 typedef unsigned int uint32;
 typedef signed int sint32;
 
-#define MED_SPEED_INIT              1200 
-#define SLOW_SPEED_INIT             675 
-#define SUPER_SLOW_SPEED_INIT       505 
+#define MED_SPEED_INIT              970 
+#define SLOW_SPEED_INIT             685 
+#define SUPER_SLOW_SPEED_INIT       530 
 
-/// TEST FOR MIN AND MAX PWM VALUES
-#define MAX_SPEED_PWM       1500
+#define MAX_SPEED_PWM       1400
 #define MIN_SPEED_PWM       300
 
 
-#define MED_SPEED           150
+#define MED_SPEED           120
 #define SLOW_SPEED          90
 #define SUPER_SLOW_SPEED    70
 
-#define RIGHT_TURN          650
-#define FULL_TURN           1300
+#define RIGHT_TURN         750
+#define LEFT_TURN          720
+#define FULL_TURN          1400
 //****************************************************************************
 //
 //
@@ -100,7 +100,7 @@ enum DIRECTION
     REVERSE,
     LEFT_90,
     RIGHT_90,
-    HALF_TURN
+    TURN_180
 };
 
 enum WHEEL_DIRECTION
@@ -131,15 +131,15 @@ uint32 M2PosEdgeCnt;
 uint16 IC4PosEdgeTime;
 uint16 IC4NegEdgeTime;
 uint16 DC;
-float Hz;
+float  Hz;
 uint32 TM364PS;
-float CalcSensPer;
-float Input;
-uint8 USSensorFlag;
+float  CalcSensPer;
+float  Input;
+uint8  USSensorFlag;
 uint32 IC4EdgeCnt;
 uint32 PersistantBuffer;
 
-uint8 AdjustSpeedFlag;
+uint8  AdjustSpeedFlag;
 uint16 Motor2Speed;
 uint16 Motor1Speed;
 uint32 TargetEncoder;
@@ -153,22 +153,29 @@ uint32 Fixed;
 
 uint32 M1Distance;
 uint32 M2Distance;
-uint8 TurnFlag;
+uint32 M1Skipped;
+uint32 M2Skipped;
+uint32 M1TurnDistance;
+uint32 M2TurnDistance;
+uint8  TurnFlag;
 uint32 TurnCnt;
+uint32 StartTurnCnt;
 
 uint8 M2Faster;
 uint8 M1Faster;
 
 // Sensor
 uint16 i;
-float val;
+float  val;
 uint32 SensorCnt;
-float Inches[40];
+float  Inches[40];
 uint16 ADC10[40];
 
-float inch;
+float  inch;
 uint32 distance;
 sint32 distanceDiff;
-uint8 SpeedUp;
+uint8  SpeedUp;
+
+uint32 TestAdjust;
 
 #endif	/* HAVVOCC_H */

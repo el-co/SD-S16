@@ -32,10 +32,9 @@ void Init(void)
     ADCInit();
     ICInit();
     PWMInit();
-    SetDirection( FORWARD );
     SetSpeed( OFF );    
-    MotorSpeedCtrl( Motor1Speed, Motor2Speed );
-       
+    SetDirection( FORWARD );      
+    MotorSpeedCtrl( Motor1Speed, Motor2Speed );      
 }
 
 //****************************************************************************
@@ -130,7 +129,8 @@ void TimerInit(void)
     
     // TIMER 4
     T4CONbits.TCKPS = 0b111;    // 1:256 prescaler
-    PR4 = 0x30D4;               // 10Hz 100ms 0x3D09
+    PR4 = 0x30D4;               // 10Hz 80ms 0x30D4 
+    
     TMR4 = 0;
     T4CONbits.ON = 1;
     
@@ -338,7 +338,6 @@ uint16 PI( uint16 ActualEncoder, uint8 Motor)
 
     PWM = (Kp * error) + (Ki * Integral);
     
-    
     PWM += (Motor == 0)? OC3RS: OC4RS; 
     
     if (PWM > MAX_SPEED_PWM)
@@ -380,16 +379,15 @@ void SetSpeed( uint32 Speed)
             TargetEncoder = 0;
             break;
         case(SUPER_SLOW):
-            MotorSpeedCtrl( SUPER_SLOW_SPEED_INIT, SUPER_SLOW_SPEED_INIT+45 );                            
+            MotorSpeedCtrl( SUPER_SLOW_SPEED_INIT, SUPER_SLOW_SPEED_INIT+40 );                            
             TargetEncoder = SUPER_SLOW_SPEED;              
             break;            
         case(SLOW):
-            // 677 756
-            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+80 );                            
+            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+45 );                            
             TargetEncoder = SLOW_SPEED;             
             break;
         case(MED):
-            MotorSpeedCtrl( MED_SPEED_INIT, MED_SPEED_INIT+60 );                            
+            MotorSpeedCtrl( MED_SPEED_INIT, MED_SPEED_INIT+30 );                            
             TargetEncoder = MED_SPEED;              
             break;
         default:
@@ -414,7 +412,7 @@ void SetDirection( uint32 Direction)
     switch(Direction)
     {
         case(FORWARD):
-                MotorDirectionCtrl( FWD, FWD );
+                MotorDirectionCtrl( FWD, FWD );                
                 TurnCnt = 0;
                 TurnFlag = 0;
             break;
@@ -424,17 +422,26 @@ void SetDirection( uint32 Direction)
                 TurnFlag = 0;                
             break;            
         case(LEFT_90):
-                MotorDirectionCtrl( FWD, RVS );  
-                TurnCnt = RIGHT_TURN;
+                MotorDirectionCtrl( RVS, FWD );  
+                M1Distance = 0;
+                M2Distance = 0;                 
+                StartTurnCnt = M1PosEdgeCnt;                
+                TurnCnt = LEFT_TURN;
                 TurnFlag = 1;                
             break;
         case(RIGHT_90):
-                MotorDirectionCtrl( RVS, FWD );   
+                MotorDirectionCtrl( FWD, RVS ); 
+                M1Distance = 0; 
+                M2Distance = 0;                 
+                StartTurnCnt = M1PosEdgeCnt;                
                 TurnCnt = RIGHT_TURN;
                 TurnFlag = 1;                
             break;
-        case(HALF_TURN):
+        case(TURN_180):
                 MotorDirectionCtrl( FWD, RVS ); 
+                M1Distance = 0;   
+                M2Distance = 0;                   
+                StartTurnCnt = M1PosEdgeCnt;                
                 TurnCnt = FULL_TURN;
                 TurnFlag = 1;               
             break;
