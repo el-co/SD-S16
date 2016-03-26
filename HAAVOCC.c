@@ -169,22 +169,22 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 {
     IFS0bits.T4IF = 0;      // Turn Flag Off
 //    LATAbits.LATA0 ^= 1;      
-    if (TEST4++ > 50 && SpeedUp == 0)
-    {
+//    if (TEST4++ > 50 && SpeedUp == 0)
+//    {
 //        DebugFlag(); 
         
-        SetSpeed(MED); 
+//        SetSpeed(MED); 
 //        SetDirection( LEFT_90 );           
-        LATAbits.LATA0 = 1;  
+//        LATAbits.LATA0 = 1;  
 //        CatchUp=0;
 //        M1Distance=0;
 //        M2Distance=0;
-        SpeedUp = 1;
+//        SpeedUp = 1;
 //        TEST4 = 0;
 //        M1PosEdgeCnt=0;
 //        M2PosEdgeCnt=0;  
 //        Fixed = 0;
-    }  
+//    }  
     
     M2Distance += M2PosEdgeCnt;    
     M1Distance += M1PosEdgeCnt;    
