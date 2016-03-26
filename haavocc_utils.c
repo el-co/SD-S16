@@ -455,25 +455,36 @@ void SetDirection( uint32 Direction)
 
 void SensorCalc() 
 {    
-    i = AN10ADC * 0.66; // INPUT BUFFER scaled to a 5V input
-    val=(6762/(i-9))-4;
-    inch= val/2.54;
+    i = AN10ADC; // INPUT BUFFER scaled to a 5V input
     
+//    analog value 409 aprox 6 inch
+    if (i<= 417 && i>=967)
+    {
+        //go slow 
+        SetSpeed(SUPER_SLOW);
+        MotorSpeedCtrl( Motor1Speed, Motor2Speed );//stop
     
-//    if (inch < 24)
-//    {
-        if (SensorCnt == 40)
-        {
-//            LATAbits.LATA0 = 1;         
-//            DebugFlag();   
-            SensorCnt = 0;
-        }
-        Inches[SensorCnt] = inch;
-        ADC10[SensorCnt] = AN10ADC;
-        SensorCnt ++;
-//    }
+   }
+    // analog value 942 aprox 3 inch
+    else if (i<967)
+    {
+        SetSpeed(OFF);
+        MotorSpeedCtrl( Motor1Speed, Motor2Speed );//stop
+    
+    }
+////    if (inch < 24)
+////    {
+//        if (cnt == 40)
+//        {
+////            LATAbits.LATA0 = 1;         
+////            DebugFlag();   
+//            cnt = 0;
+//        }
+//        Inches[cnt] = inch;
+//        ADC10[cnt] = AN10ADC;
+//        cnt ++;
+////    }
 }  
-
 void DebugFlag()
 {
     SetSpeed(OFF);   
