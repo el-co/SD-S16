@@ -34,14 +34,16 @@ void main(void)
     USSensorFlag = 0;
     Fixed = 0;
     SensorCnt = 0;
-    M1Distance = 0;
-    M2Distance = 0;    
-    TurnFlag = 0;
-
+    Debug = 0;
     SpeedUp = 0;
     TestAdjust = 0;    
-    
-    LATAbits.LATA0 = 1; 
+    distDifCnt = 0;
+    maxDistDiff = 0;  
+    aft1 = 0;
+    aft2 = 0;  
+    turnFixCnt1 = 0;
+    turnFixCnt2 = 0;    
+    LATAbits.LATA0 = 0; 
     while(1)
     { 
         switch(State)
@@ -61,17 +63,15 @@ void main(void)
                 State = NAVIGATE; 
                 break;
             case NAVIGATE:
-//                LATAbits.LATA0 = 1; 
                 if ( AdjustSpeedFlag != 0 )
                 {
-//                    LATAbits.LATA0 = 0;     
                     MotorSpeedCtrl( Motor1Speed, Motor2Speed );
                     
                     AdjustSpeedFlag = 0;
                 }
                 if ( SensorEvalFlag != 0 )
                 {
-                    SensorCalc();                 
+//                    SensorCalc();                 
                     SensorEvalFlag = 0;
                 }                
                 
@@ -117,18 +117,22 @@ void main(void)
 void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
 {
     IFS0bits.T2IF = 0;      // Turn Flag Off
-    
+
     if  (State == NAVIGATE && TurnFlag == 1) 
     {
-        M1TurnDistance = (M1Distance + M1PosEdgeCnt) - StartTurnCnt;
-        M2TurnDistance = (M2Distance + M2PosEdgeCnt) - StartTurnCnt;
-        
-        if ( M1TurnDistance >= TurnCnt &&  M2TurnDistance >= TurnCnt )
+        MotorTurnDistance = (MotorTurnCheck == MOTOR_1)? (M1Distance + M1PosEdgeCnt): (M2Distance + M2PosEdgeCnt);
+        MotorTurnDistance -= StartTurnCnt;
+
+        if ( MotorTurnDistance >= TurnCnt )
         {
             SetDirection( FORWARD );
+            M1Distance = 0;
+            M2Distance = 0;   
+            distanceDiff = 0;            
             TurnFlag = 0;
             SpeedUp = 0;
-            TEST4 = 0;            
+            Debug = 1;
+            TEST4 = 0;  
         }
     }
 } 
@@ -146,7 +150,7 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
 void __ISR (12, IPL2SOFT) Timer3IntHandler(void)
 {
     IFS0bits.T3IF = 0;      // Turn Flag Off
-//    LATAbits.LATA0 ^= 1;      
+
     if (USSensorFlag != 0)
     {
        DC = IC4NegEdgeTime - IC4PosEdgeTime; 
@@ -168,29 +172,32 @@ void __ISR (12, IPL2SOFT) Timer3IntHandler(void)
 void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 {
     IFS0bits.T4IF = 0;      // Turn Flag Off
-//    LATAbits.LATA0 ^= 1;      
-//    if (TEST4++ > 50 && SpeedUp == 0)
+//    if (TEST4++ > 100 && SpeedUp == 0)
 //    {
-//        DebugFlag(); 
-        
-//        SetSpeed(MED); 
-//        SetDirection( LEFT_90 );           
-//        LATAbits.LATA0 = 1;  
-//        CatchUp=0;
-//        M1Distance=0;
-//        M2Distance=0;
+//        
+////        SetSpeed(MED); 
+//        SetDirection( TURN_180 );           
 //        SpeedUp = 1;
-//        TEST4 = 0;
-//        M1PosEdgeCnt=0;
-//        M2PosEdgeCnt=0;  
+////        TEST4 = 0;
+// 
 //        Fixed = 0;
 //    }  
     
     M2Distance += M2PosEdgeCnt;    
     M1Distance += M1PosEdgeCnt;    
-   
+    
+    
+    distanceDiff = M1Distance - M2Distance;  
+    maxDistDiff = ( maxDistDiff < distanceDiff )? distanceDiff: maxDistDiff;    
+    
+    if (M1Distance > 60000 || M2Distance >60000)
+    {
+        M1Distance = 0;
+        M2Distance = 0;        
+    }
+    
     /// fix encoders
-    if ( (State == NAVIGATE) && (AdjustSpeedFlag ==  0) && (M1PosEdgeCnt < 50) && (M2PosEdgeCnt < 50) )
+    if ( (State == NAVIGATE) && (AdjustSpeedFlag ==  0) && (M1PosEdgeCnt > 40) && (M2PosEdgeCnt > 40) )
     {
         if (CatchUp++ > 3)
         {
@@ -202,8 +209,7 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 //                    TestAdjust++;
 //
 //                    if (TestAdjust == 200)
-//                    {
-//                        DebugFlag();                    
+//                    {                   
 //                        TestAdjust = 0;
 //                        LATAbits.LATA0 = 1;                     
 //                    }
@@ -211,40 +217,106 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 //            }
 //            if (M1Faster == 1 || M2Faster ==1)  
 //            {
-//                DebugFlag();  
-//                M1Faster = 0;
-//                distanceDiff = M1Distance - M2Distance;                
-//                M2Faster = 0;
+//                if ( distDifCnt++ > 100 )
+//                {                    
+//                    M1Faster = 0;
+//                    distanceDiff = M1Distance - M2Distance;                
+//                    M2Faster = 0;
+//                }
 //            }
-            distanceDiff = M1Distance - M2Distance;    
-            Motor2Speed = PI(M2PosEdgeCnt, 1);
-            Motor1Speed = PI(M1PosEdgeCnt, 0);                
+            if ( (Debug != 0) && (distanceDiff > 15 || distanceDiff < -15))
+            {
+//                SetSpeed( OFF );
+                Debug = 0;
+            }           
         
-//            if (distanceDiff > 15) // Motor 1 faster
-//            {  
-//                Motor2Speed += 1;
-//                M1Faster = 1;
-//                M2Faster = 0;                
-//            }
-//            else if (distanceDiff < -15) // Motor 2 faster
-//            {                                             
-//                Motor1Speed += 1;
-//                M1Faster = 0;
-//                M2Faster = 1; 
-//            }                    
             
+            
+            if ((M1PosEdgeCnt > (TargetEncoder+5)) || (M1PosEdgeCnt < (TargetEncoder-5))
+                 || (M2PosEdgeCnt > (TargetEncoder+5)) || (M2PosEdgeCnt < (TargetEncoder-5)))
+            {
+                LATAbits.LATA0 = 0;   
+                Motor2Speed = PI(M2PosEdgeCnt, 0, MOTOR_2);
+                Motor1Speed = PI(M1PosEdgeCnt, 0, MOTOR_1);                 
+                
+                M1Faster = 0;
+                M2Faster = 0;                     
+            }
+            else if (distanceDiff > 3 && TurnFlag == 0) // Motor 1 faster
+            { 
+                LATAbits.LATA0 = 1;                 
+
+                Motor2Speed = PI(M2PosEdgeCnt, distanceDiff, MOTOR_2);
+                Motor1Speed = PI(M1PosEdgeCnt, 0, MOTOR_1);                  
+ 
+//                if (M1Faster==0)
+//                {
+//                    turnFixCnt1 = 0;
+//                    AfterDiffM1[aft1] = distanceDiff;                  
+//                }               
+//                else 
+//                {
+//                    turnFixCnt1++;
+//                }
+                
+                M1Faster = 1;      
+                M2Faster = 0;    
+                             
+            }
+            else if (distanceDiff < -3 && TurnFlag == 0) // Motor 2 faster
+            {   
+                LATAbits.LATA0 = 1; 
+                Motor2Speed = PI(M2PosEdgeCnt, 0, MOTOR_2);
+                Motor1Speed = PI(M1PosEdgeCnt, -distanceDiff, MOTOR_1);                                
+
+//                if (M2Faster==0)
+//                {
+//                    turnFixCnt2 = 0;
+//                    AfterDiffM2[aft2] = distanceDiff;                   
+//                }  
+//                else 
+//                {
+//                    turnFixCnt2++;
+//                }
+                
+                M2Faster = 1;            
+                M1Faster = 0;
+            }                    
+            else 
+            {             
+                LATAbits.LATA0 = 0;   
+                Motor2Speed = PI(M2PosEdgeCnt, 0, MOTOR_2);
+                Motor1Speed = PI(M1PosEdgeCnt, 0, MOTOR_1);                 
+//                if (M1Faster!=0)
+//                {
+//                    AfterFixM1[aft1] = turnFixCnt1;
+//                    aft1 ++;
+//                    if (aft1 >=10)
+//                    {
+//                        aft1 = 0;                        
+//                    }                    
+//                }
+//                if (M2Faster!=0)
+//                {
+//                    AfterFixM2[aft2] = turnFixCnt2;
+//                    aft2 ++;
+//                    if (aft2 >=10)
+//                    {
+//                        aft2 = 0;                        
+//                    }                      
+//                }    
+                
+                M1Faster = 0;
+                M2Faster = 0;                      
+            }
+            
+            lastM1 = M1PosEdgeCnt;
+            lastM2 = M2PosEdgeCnt;
+              
             Fixed++;
             AdjustSpeedFlag =  1;
         }
     }   
-    if (M1PosEdgeCnt < 50 && M1PosEdgeCnt != 0)
-    {
-        M1Skipped++;
-    }
-    if (M2PosEdgeCnt < 50 && M2PosEdgeCnt != 0)
-    {
-        M2Skipped++;        
-    }
     
     M2PosEdgeCnt = 0;
     M1PosEdgeCnt = 0;  

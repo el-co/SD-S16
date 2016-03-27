@@ -34,7 +34,10 @@ void Init(void)
     PWMInit();
     SetSpeed( OFF );    
     SetDirection( FORWARD );      
-    MotorSpeedCtrl( Motor1Speed, Motor2Speed );      
+    MotorSpeedCtrl( Motor1Speed, Motor2Speed );   
+    
+    M1Distance = 0;
+    M2Distance = 0;    
 }
 
 //****************************************************************************
@@ -322,10 +325,12 @@ void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection)
 // Return:      PWM - Adjusted PWM value
 //
 //****************************************************************************
-uint16 PI( uint16 ActualEncoder, uint8 Motor)
+uint16 PI( uint16 ActualEncoder, uint32 distanceError, uint8 Motor )
 {
 
     float Kp = 0.4;
+    float KpS = 0.4; 
+    float KpD = 0.4;    
     float Ki = 0.001;     
     float dt = 0.08;
     
@@ -333,30 +338,35 @@ uint16 PI( uint16 ActualEncoder, uint8 Motor)
     uint16 PWM;
     sint32 Integral;
     
-    error = TargetEncoder - ActualEncoder;
-    Integral = (Motor == 0)? M1Integral: M2Integral;
+    Kp = (distanceError == 0)? KpS: KpD;    
+    error = (distanceError == 0)? (TargetEncoder - ActualEncoder): distanceError;
+    Integral = (Motor == MOTOR_1)? M1Integral: M2Integral;
 
     PWM = (Kp * error) + (Ki * Integral);
     
-    PWM += (Motor == 0)? OC3RS: OC4RS; 
+    PWM += (Motor == MOTOR_1)? OC3RS: OC4RS; 
     
-    if (PWM > MAX_SPEED_PWM)
+
+    if (PWM > MaxPWM)
     {
-        PWM = MAX_SPEED_PWM;        
+        PWM = MaxPWM;        
     }
-    else if (PWM < MIN_SPEED_PWM)
+    else if (PWM < MinPWM)
     {
-        PWM = MIN_SPEED_PWM;
-        
+        PWM = MinPWM;       
     }
-    else if (Motor == 0)
+    else if (distanceError == 0) 
     {
-        M1Integral += (error * dt);      
+        if (Motor == 0)
+        {
+            M1Integral += (error * dt);   
+        }
+        else
+        {
+            M2Integral += (error * dt);      
+        }         
     } 
-    else
-    {
-        M2Integral += (error * dt);      
-    }     
+    
     return PWM;
 }
 
@@ -376,23 +386,36 @@ void SetSpeed( uint32 Speed)
     {
         case(OFF):
             MotorSpeedCtrl( 0, 0 );                             
-            TargetEncoder = 0;
+            TargetEncoder = 0;  
+            Speed = OFF;
+            MaxPWM = 0;
+            MinPWM = 0;            
             break;
         case(SUPER_SLOW):
             MotorSpeedCtrl( SUPER_SLOW_SPEED_INIT, SUPER_SLOW_SPEED_INIT+40 );                            
-            TargetEncoder = SUPER_SLOW_SPEED;              
+            TargetEncoder = SUPER_SLOW_SPEED;
+            MaxPWM = SUPER_SLOW_SPEED_INIT + 150;
+            MinPWM = SUPER_SLOW_SPEED_INIT - 150;            
+            Speed = SUPER_SLOW;            
             break;            
         case(SLOW):
-            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+45 );                            
-            TargetEncoder = SLOW_SPEED;             
+            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+40 );                            
+            TargetEncoder = SLOW_SPEED;   
+            MaxPWM = SLOW_SPEED_INIT + 150;
+            MinPWM = SLOW_SPEED_INIT - 150;              
+            Speed = SLOW;
             break;
         case(MED):
             MotorSpeedCtrl( MED_SPEED_INIT, MED_SPEED_INIT+30 );                            
-            TargetEncoder = MED_SPEED;              
+            TargetEncoder = MED_SPEED; 
+            MaxPWM = MED_SPEED_INIT + 150;
+            MinPWM = MED_SPEED_INIT - 150;              
+            Speed = MED;            
             break;
         default:
             MotorSpeedCtrl( 0, 0 );                             
-            TargetEncoder = 0;            
+            TargetEncoder = 0;
+            Speed = OFF;            
             break;            
     }
 }
@@ -424,7 +447,8 @@ void SetDirection( uint32 Direction)
         case(LEFT_90):
                 MotorDirectionCtrl( RVS, FWD );  
                 M1Distance = 0;
-                M2Distance = 0;                 
+                M2Distance = 0;    
+                MotorTurnCheck = MOTOR_2;               
                 StartTurnCnt = M1PosEdgeCnt;                
                 TurnCnt = LEFT_TURN;
                 TurnFlag = 1;                
@@ -432,15 +456,17 @@ void SetDirection( uint32 Direction)
         case(RIGHT_90):
                 MotorDirectionCtrl( FWD, RVS ); 
                 M1Distance = 0; 
-                M2Distance = 0;                 
-                StartTurnCnt = M1PosEdgeCnt;                
+                M2Distance = 0;   
+                MotorTurnCheck = MOTOR_1;                  
+                StartTurnCnt = M1PosEdgeCnt;                  
                 TurnCnt = RIGHT_TURN;
                 TurnFlag = 1;                
             break;
         case(TURN_180):
                 MotorDirectionCtrl( FWD, RVS ); 
                 M1Distance = 0;   
-                M2Distance = 0;                   
+                M2Distance = 0;     
+                MotorTurnCheck = MOTOR_1;                 
                 StartTurnCnt = M1PosEdgeCnt;                
                 TurnCnt = FULL_TURN;
                 TurnFlag = 1;               
@@ -485,9 +511,3 @@ void SensorCalc()
 //        cnt ++;
 ////    }
 }  
-void DebugFlag()
-{
-    SetSpeed(OFF);   
-
-    LATAbits.LATA0 = 0;  
-}

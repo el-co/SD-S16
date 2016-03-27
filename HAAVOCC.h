@@ -25,19 +25,15 @@ typedef unsigned int uint32;
 typedef signed int sint32;
 
 #define MED_SPEED_INIT              970 
-#define SLOW_SPEED_INIT             685 
+#define SLOW_SPEED_INIT             575 
 #define SUPER_SLOW_SPEED_INIT       530 
-
-#define MAX_SPEED_PWM       1400
-#define MIN_SPEED_PWM       300
-
 
 #define MED_SPEED           120
 #define SLOW_SPEED          90
 #define SUPER_SLOW_SPEED    70
 
-#define RIGHT_TURN         750
-#define LEFT_TURN          720
+#define RIGHT_TURN         700
+#define LEFT_TURN          700
 #define FULL_TURN          1400
 //****************************************************************************
 //
@@ -65,11 +61,10 @@ void ICInit(void);
 //****************************************************************************
 void MotorSpeedCtrl( uint32 LSpeed, uint32 RSpeed );
 void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection);
-uint16 PI( uint16 ActlEncoder, uint8 Motor );
+uint16 PI( uint16 ActualEncoder, uint32 distanceError, uint8 Motor );
 void SetSpeed( uint32 Speed);
 void SetDirection( uint32 Direction);
 void SensorCalc();
-void DebugFlag();
 
 //****************************************************************************
 // 
@@ -109,6 +104,11 @@ enum WHEEL_DIRECTION
     FWD = 1
 };
 
+enum MOTORS
+{
+    MOTOR_1 = 0,
+    MOTOR_2 = 1
+};
 //****************************************************************************
 //
 //                              Global Variables
@@ -143,6 +143,7 @@ uint8  AdjustSpeedFlag;
 uint16 Motor2Speed;
 uint16 Motor1Speed;
 uint32 TargetEncoder;
+uint8 Speed;
 
 float M1Integral;
 float M2Integral;
@@ -155,14 +156,16 @@ uint32 M1Distance;
 uint32 M2Distance;
 uint32 M1Skipped;
 uint32 M2Skipped;
-uint32 M1TurnDistance;
-uint32 M2TurnDistance;
+uint32 MotorTurnDistance;
+uint8  MotorTurnCheck;
 uint8  TurnFlag;
 uint32 TurnCnt;
 uint32 StartTurnCnt;
+uint32 MaxPWM;
+uint32 MinPWM;
 
-uint8 M2Faster;
-uint8 M1Faster;
+uint32 M2Faster;
+uint32 M1Faster;
 
 // Sensor
 uint16 i;
@@ -175,7 +178,19 @@ float  inch;
 uint32 distance;
 sint32 distanceDiff;
 uint8  SpeedUp;
-
+uint32 distDifCnt;
+sint32 maxDistDiff;
+        
 uint32 TestAdjust;
-
+uint8  Debug;
+sint32 AfterDiffM1[20];
+sint32 AfterDiffM2[20];
+uint32 AfterFixM1[20];
+uint32 AfterFixM2[20];
+uint32 aft1;
+uint32 aft2;
+uint32 turnFixCnt1;
+uint32 turnFixCnt2;
+uint16 lastM1;
+uint16 lastM2;
 #endif	/* HAVVOCC_H */
