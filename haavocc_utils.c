@@ -325,12 +325,12 @@ void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection)
 // Return:      PWM - Adjusted PWM value
 //
 //****************************************************************************
-uint16 PI( uint16 ActualEncoder, uint32 distanceError, uint8 Motor )
+uint16 PI( uint16 ActualEncoder, uint16 TrgtEncoder, uint8 Motor )
 {
 
-    float Kp = 0.4;
-    float KpS = 0.4; 
-    float KpD = 0.4;    
+    float Kp = 0.45;
+//    float KpS = 0.45; 
+//    float KpD = 0.2;    
     float Ki = 0.001;     
     float dt = 0.08;
     
@@ -338,14 +338,13 @@ uint16 PI( uint16 ActualEncoder, uint32 distanceError, uint8 Motor )
     uint16 PWM;
     sint32 Integral;
     
-    Kp = (distanceError == 0)? KpS: KpD;    
-    error = (distanceError == 0)? (TargetEncoder - ActualEncoder): distanceError;
+//    Kp = (distanceError == 0)? KpS: KpD;    
+    error = TrgtEncoder - ActualEncoder;
     Integral = (Motor == MOTOR_1)? M1Integral: M2Integral;
 
     PWM = (Kp * error) + (Ki * Integral);
     
     PWM += (Motor == MOTOR_1)? OC3RS: OC4RS; 
-    
 
     if (PWM > MaxPWM)
     {
@@ -355,16 +354,19 @@ uint16 PI( uint16 ActualEncoder, uint32 distanceError, uint8 Motor )
     {
         PWM = MinPWM;       
     }
-    else if (distanceError == 0) 
+    else
     {
-        if (Motor == 0)
+        if (TrgtEncoder == TargetEncoder)
         {
-            M1Integral += (error * dt);   
+            if (Motor == 0)
+            {
+                M1Integral += (error * dt);   
+            }
+            else
+            {
+                M2Integral += (error * dt);      
+            }    
         }
-        else
-        {
-            M2Integral += (error * dt);      
-        }         
     } 
     
     return PWM;
@@ -399,7 +401,7 @@ void SetSpeed( uint32 Speed)
             Speed = SUPER_SLOW;            
             break;            
         case(SLOW):
-            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+40 );                            
+            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+20 );                            
             TargetEncoder = SLOW_SPEED;   
             MaxPWM = SLOW_SPEED_INIT + 150;
             MinPWM = SLOW_SPEED_INIT - 150;              

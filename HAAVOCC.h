@@ -24,16 +24,16 @@ typedef signed short sint16;
 typedef unsigned int uint32;
 typedef signed int sint32;
 
-#define MED_SPEED_INIT              970 
-#define SLOW_SPEED_INIT             575 
+#define MED_SPEED_INIT              1880 
+#define SLOW_SPEED_INIT             620 
 #define SUPER_SLOW_SPEED_INIT       530 
 
-#define MED_SPEED           120
+#define MED_SPEED           250
 #define SLOW_SPEED          90
 #define SUPER_SLOW_SPEED    70
 
-#define RIGHT_TURN         700
-#define LEFT_TURN          700
+#define RIGHT_TURN         650
+#define LEFT_TURN          650
 #define FULL_TURN          1400
 //****************************************************************************
 //
@@ -61,7 +61,7 @@ void ICInit(void);
 //****************************************************************************
 void MotorSpeedCtrl( uint32 LSpeed, uint32 RSpeed );
 void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection);
-uint16 PI( uint16 ActualEncoder, uint32 distanceError, uint8 Motor );
+uint16 PI( uint16 ActualEncoder, uint16 TargetEncoder, uint8 Motor );
 void SetSpeed( uint32 Speed);
 void SetDirection( uint32 Direction);
 void SensorCalc();
@@ -193,4 +193,13 @@ uint32 turnFixCnt1;
 uint32 turnFixCnt2;
 uint16 lastM1;
 uint16 lastM2;
+
+uint16 m1target;
+uint16 m2target;
+
+uint16 M1EncCounts[500];
+uint16 M2EncCounts[500]; 
+uint16 M1PWMCounts[500];
+uint16 M2PWMCounts[500]; 
+uint16 encCnt;        
 #endif	/* HAVVOCC_H */
