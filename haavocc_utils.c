@@ -37,7 +37,9 @@ void Init(void)
     MotorSpeedCtrl( Motor1Speed, Motor2Speed );   
     
     M1Distance = 0;
-    M2Distance = 0;    
+    M2Distance = 0;
+    
+    Extinguish = 0;
 }
 
 //****************************************************************************
@@ -52,42 +54,52 @@ void Init(void)
 //****************************************************************************
 void GPIOInit(void)
 {
-    ANSELAbits.ANSA0 = 0;       // RA0 LED PIN    
-    TRISAbits.TRISA0 = 0;       // RA0 Output   
+    // LED Pins
+    TRISAbits.TRISA7 = 0;       // RA7 Output   
+    TRISAbits.TRISA9 = 0;       // RA9 Output   
+    TRISAbits.TRISA10 = 0;      // RA10 Output   
+    TRISCbits.TRISC7 = 0;       // RC7 Output   
+    TRISCbits.TRISC8 = 0;       // RC8 Output   
 
     // ADC Pins
-    ANSELAbits.ANSA1 = 1;       // RA1 Analog
-    ANSELBbits.ANSB2 = 1;       // RB2 Analog
-    ANSELBbits.ANSB3 = 1;       // RB3 Analog
-    ANSELBbits.ANSB13 = 1;      // RB13 Analog
-    ANSELBbits.ANSB14 = 1;      // RB14 Analog
-//    ANSELBbits.ANSB15 = 1;      // RB15 Analog
+    // Flame Sensors
+    ANSELAbits.ANSA0 = 1;       // RA0 Analog  - AN0
+    ANSELAbits.ANSA1 = 1;       // RA1 Analog  - AN1
+    ANSELBbits.ANSB2 = 1;       // RB2 Analog  - AN4
+    ANSELBbits.ANSB3 = 1;       // RB3 Analog  - AN5
+    ANSELCbits.ANSC0 = 1;       // RC0 Analog  - AN6
+    TRISAbits.TRISA0 = 1;       // RA0 Input  - AN0        
+    TRISAbits.TRISA1 = 1;       // RA1 Input  - AN1     
+    TRISBbits.TRISB2 = 1;       // RB2 Input  - AN4
+    TRISBbits.TRISB3 = 1;       // RB3 Input  - AN5
+    TRISCbits.TRISC0 = 1;       // RC0 Input  - AN6 
     
-    TRISAbits.TRISA1 = 1;       // RA1 Input     
-    TRISBbits.TRISB2 = 1;       // RB2 Input
-    TRISBbits.TRISB3 = 1;       // RB3 Input
-    TRISBbits.TRISB13 = 1;      // RB13 Input
-    TRISBbits.TRISB14 = 1;      // RB14 Input
-//    TRISBbits.TRISB15 = 1;      // RB15 Input ///SET AS PWM INPUT SENSOR
-            
+    // IR Sensors
+    ANSELBbits.ANSB13 = 1;      // RB13 Analog - AN11
+    ANSELBbits.ANSB14 = 1;      // RB14 Analog - AN10
+    ANSELBbits.ANSB15 = 1;      // RB15 Analog - AN9
+    ANSELCbits.ANSC3 = 1;       // RC3 Analog  - AN12
+    TRISBbits.TRISB13 = 1;      // RB13 Input - AN11
+    TRISBbits.TRISB14 = 1;      // RB14 Input - AN10
+    TRISBbits.TRISB15 = 1;      // RB15 Input - AN9            
+    TRISCbits.TRISC3 = 1;       // RC3 Input  - AN12   
+    
     // PWM Pins
-    // Pins A0, A2, A3, A4 are default 0 in ANSELA
-    // Pins B4, B7, B8 are default 0 in ANSELB    
-    TRISAbits.TRISA2 = 0;       //  RPA2 - OC4
-    TRISAbits.TRISA3 = 0;    	//  RPA3 - OC3
-    TRISAbits.TRISA4 = 0;       //  RA4 - INB1
-    TRISBbits.TRISB4 = 0;		//  RB4 - INA1
-    TRISBbits.TRISB7 = 0;       //  RB7 - INA2
-    TRISBbits.TRISB8 = 0;		//  RB8 - INB2
+    TRISAbits.TRISA2 = 0;       //  RPA2 OC4    - PWM2
+    TRISAbits.TRISA3 = 0;    	//  RPA3 OC3    - PWM1
+    TRISAbits.TRISA4 = 0;       //  RA4         - INB1
+    TRISBbits.TRISB4 = 0;		//  RB4         - INA1
+    TRISBbits.TRISB7 = 0;       //  RB7         - INA2
+    TRISBbits.TRISB10 = 0;		//  RB10        - INB2
     
     // IC Pins
-    // Pins B5, B9 are default analog   
-    ANSELBbits.ANSB15 = 0;      // RB15 Digital
-    
     TRISBbits.TRISB5 = 1;       // RB5 Input
-    TRISBbits.TRISB9 = 1;       // RB9 Input
-    TRISBbits.TRISB15 = 1;      // RB15 Input   
+    TRISCbits.TRISC5 = 1;       // RC5 Input
+    TRISCbits.TRISC6 = 1;       // RC6 Input   
     
+    // Solenoid
+    TRISCbits.TRISC4 = 0;    	//  RPC4 Output
+
 }
 
 //****************************************************************************
@@ -132,7 +144,7 @@ void TimerInit(void)
     
     // TIMER 4
     T4CONbits.TCKPS = 0b111;    // 1:256 prescaler
-    PR4 = 0x30D4;               // 10Hz 80ms 0x30D4 
+    PR4 = 0x2BF2;               // 10Hz 80ms 0x30D4 
     
     TMR4 = 0;
     T4CONbits.ON = 1;
@@ -156,8 +168,8 @@ void TimerInit(void)
 //****************************************************************************
 void PWMInit(void)
 {
-    RPA2Rbits.RPA2R = 0b0101;   //PPS OC4 for A2 (pin 9)
-    RPA3Rbits.RPA3R = 0b0101;   //PPS OC3 for A3 (pin 10)
+    RPA2Rbits.RPA2R = 0b0101;   //PPS OC4 for A2 (pin 30)
+    RPA3Rbits.RPA3R = 0b0101;   //PPS OC3 for A3 (pin 31)
     
     OC3CON = 0x0000;            // OC3 Disable
     OC3CON = 0x0006;            // OCM PWM mode   
@@ -190,19 +202,22 @@ void ADCInit(void)
     AD1CON1bits.CLRASAM = 1;    // Stop conversions when the first ADC interrupt is generated
                                 // Will also clear ASAM bit  
     AD1CON2bits.CSCNA = 1;      // Scan Inputs
-    AD1CON2bits.SMPI = 4;       // Interrupts at the completion of conversion for each 5th sample/convert sequence
+    AD1CON2bits.SMPI = 8;       // Interrupts at the completion of conversion for each 9th sample/convert sequence
     
 //    AD1CON3bits.SAMC = 31;      // Auto-Sample Time bits - 31 TAD
 //    AD1CON3bits.ADCS = 1;       // ADC Conversion Clock Select bits - TPB * 2 * (ADCS + 1) = TAD
     
     AD1CHS  = 0;                // AD1 INPUT SELECT REGISTER
                                 // Not needed for auto-sampling
-    AD1CSSLbits.CSSL1 = 1;      // Select ANx for input scan - AN1 (pin 3)
-    AD1CSSLbits.CSSL4 = 1;      // Select ANx for input scan - AN4 (pin 6)
-    AD1CSSLbits.CSSL5 = 1;      // Select ANx for input scan - AN5 (pin 7)
-    AD1CSSLbits.CSSL9 = 1;      // Select ANx for input scan - AN9  (pin 24)
-    AD1CSSLbits.CSSL10 = 1;      // Select ANx for input scan - AN10 (pin 25)
-//    AD1CSSLbits.CSSL11 = 1;      // Select ANx for input scan - AN11 (pin 26)
+    AD1CSSLbits.CSSL0 = 1;      // Select ANx for input scan - AN0 (pin 19)
+    AD1CSSLbits.CSSL1 = 1;      // Select ANx for input scan - AN1 (pin 20)
+    AD1CSSLbits.CSSL4 = 1;      // Select ANx for input scan - AN4 (pin 23)
+    AD1CSSLbits.CSSL5 = 1;      // Select ANx for input scan - AN5 (pin 24)
+    AD1CSSLbits.CSSL6 = 1;      // Select ANx for input scan - AN6 (pin 25)
+    AD1CSSLbits.CSSL9 = 1;      // Select ANx for input scan - AN9  (pin 15)
+    AD1CSSLbits.CSSL10 = 1;      // Select ANx for input scan - AN10 (pin 14)
+    AD1CSSLbits.CSSL11 = 1;      // Select ANx for input scan - AN11 (pin 11)
+    AD1CSSLbits.CSSL12 = 1;      // Select ANx for input scan - AN12 (pin 36)
      
     // ADC 1 Interrupt Config
     IEC0bits.AD1IE = 0 ;        // AD1 Interrupt Enable Off
@@ -231,20 +246,20 @@ void ADCInit(void)
 //****************************************************************************
 void ICInit(void)
 {
-    // IC2
-    IC2R = 4;                   // Input Pin Selection - B9 (pin 21)
-    IC2CONbits.FEDGE = 1;       // Capture rising edge first
-    IC2CONbits.ICTMR = 0;       // Timer 3 Select
-    IC2CONbits.ICM = 0b011;     // Input Capture Mode - Simple Capture Event - Every rising edge
-    IC2CONbits.ICI = 0b00;      // Interrupt on every capture event
+    // IC4 Motor 2
+    IC4R = 7;                   // Input Pin Selection - C5 (pin 38)
+    IC4CONbits.FEDGE = 1;       // Capture rising edge first
+    IC4CONbits.ICTMR = 0;       // Timer 3 Select
+    IC4CONbits.ICM = 0b011;     // Input Capture Mode - Simple Capture Event - Every rising edge
+    IC4CONbits.ICI = 0b00;      // Interrupt on every capture event
     
-    IEC0bits.IC2IE = 0;         // IC2 Interrupt Enable Off
-    IFS0bits.IC2IF = 0;         // IC2 Interrupt Flag Off
-    IPC2bits.IC2IP = 4;         // IC2 Interrupt Priority
-//    IPC2bits.IC2IS = 2;         // IC2 Interrupt SubPriority
+    IEC0bits.IC4IE = 0;         // IC4 Interrupt Enable Off
+    IFS0bits.IC4IF = 0;         // IC4 Interrupt Flag Off
+    IPC4bits.IC4IP = 4;         // IC4 Interrupt Priority
+//    IPC4bits.IC4IS = 2;         // IC4 Interrupt SubPriority
     
-    // IC3
-    IC3R = 1;                   // Input Pin Selection - B5 (pin 14)
+    // IC3 Motor 1
+    IC3R = 1;                   // Input Pin Selection - B5 (pin 41)
     IC3CONbits.FEDGE = 1;       // Capture rising edge first
     IC3CONbits.ICTMR = 0;       // Timer 3 Select
     IC3CONbits.ICM = 0b011;     // Input Capture Mode - Simple Capture Event - Every rising edge
@@ -255,24 +270,24 @@ void ICInit(void)
     IPC3bits.IC3IP = 4;         // IC3 Interrupt Priority
 //    IPC3bits.IC3IS = 2;         // IC3 Interrupt SubPriority
 
-    // IC4
-    IC4R = 3;                   // Input Pin Selection - B15 (pin 26)
-    IC4CONbits.FEDGE = 1;       // Capture rising edge first
-    IC4CONbits.ICTMR = 0;       // Timer 3 Select
-    IC4CONbits.ICM = 0b110;     // Input Capture Mode - every edge, specified edge first
-    IC4CONbits.ICI = 0b00;      // Interrupt on every capture event
+    // IC1
+    IC1R = 5;                   // Input Pin Selection - C6 (pin 2)
+    IC1CONbits.FEDGE = 1;       // Capture rising edge first
+    IC1CONbits.ICTMR = 0;       // Timer 3 Select
+    IC1CONbits.ICM = 0b110;     // Input Capture Mode - every edge, specified edge first
+    IC1CONbits.ICI = 0b00;      // Interrupt on every capture event
     
-    IEC0bits.IC4IE = 0;         // IC4 Interrupt Enable Off
-    IFS0bits.IC4IF = 0;         // IC4 Interrupt Flag Off
-    IPC4bits.IC4IP = 4;         // IC4 Interrupt Priority
-//    IPC4bits.IC4IS = 4;         // IC4 Interrupt SubPriority    
+    IEC0bits.IC1IE = 0;         // IC1 Interrupt Enable Off
+    IFS0bits.IC1IF = 0;         // IC1 Interrupt Flag Off
+    IPC1bits.IC1IP = 4;         // IC1 Interrupt Priority
+//    IPC1bits.IC1IS = 4;         // IC1 Interrupt SubPriority    
     
     // ENABLE
-    IEC0bits.IC2IE = 1;         // IC2 Interrupt Enable
+    IEC0bits.IC1IE = 1;         // IC1 Interrupt Enable
     IEC0bits.IC3IE = 1;         // IC3 Interrupt Enable
     IEC0bits.IC4IE = 1;         // IC4 Interrupt Enable
     
-    IC2CONbits.ON = 1;          // IC2 Enable    
+    IC1CONbits.ON = 1;          // IC1 Enable    
     IC3CONbits.ON = 1;          // IC3 Enable
     IC4CONbits.ON = 1;          // IC4 Enable    
 }
@@ -290,8 +305,9 @@ void ICInit(void)
 //****************************************************************************
 void MotorSpeedCtrl( uint32 M1Speed, uint32 M2Speed )
 {    
-    OC3RS = M1Speed; // Slower motor            
-    OC4RS = M2Speed;  
+    // VERIFY
+    OC4RS = M1Speed; // Slower motor            
+    OC3RS = M2Speed;  
 }
 
 //****************************************************************************
@@ -307,10 +323,11 @@ void MotorSpeedCtrl( uint32 M1Speed, uint32 M2Speed )
 //****************************************************************************
 void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection)
 {
-    LATAbits.LATA4 = (LDirection == 0)? 1: 0;       // pin 12
-    LATBbits.LATB4 = LDirection;                    // pin 11
-    LATBbits.LATB7 = (RDirection == 0)? 1: 0;       // pin 16
-    LATBbits.LATB8 = RDirection;                    // pin 17
+    // VERIFY
+    LATAbits.LATA4 = (LDirection == 0)? 1: 0;       // pin 34
+    LATBbits.LATB4 = LDirection;                    // pin 33
+    LATBbits.LATB7 = (RDirection == 0)? 1: 0;       // pin 43
+    LATBbits.LATB10 = RDirection;                   // pin 8
 }
 
 //****************************************************************************
@@ -328,23 +345,39 @@ void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection)
 uint16 PI( uint16 ActualEncoder, uint16 TrgtEncoder, uint8 Motor )
 {
 
-    float Kp = 0.45;
-//    float KpS = 0.45; 
-//    float KpD = 0.2;    
+    float Kp = 0.4;
+    float Kp1 = 0.3; 
+    float Kp2 = 0.7;    
     float Ki = 0.001;     
-    float dt = 0.08;
+    float dt = 0.072;
     
     sint32 error;
-    uint16 PWM;
+    float PWM;
     sint32 Integral;
-    
-//    Kp = (distanceError == 0)? KpS: KpD;    
+
+    Kp = (Motor == MOTOR_1)? Kp1: Kp2;    
     error = TrgtEncoder - ActualEncoder;
     Integral = (Motor == MOTOR_1)? M1Integral: M2Integral;
-
-    PWM = (Kp * error) + (Ki * Integral);
     
-    PWM += (Motor == MOTOR_1)? OC3RS: OC4RS; 
+    // add 0.5 for rounding
+    PWM = (Kp * error) + (Ki * Integral);    
+    
+    PWM = (sint16) (( PWM < 0 )? PWM - 0.5: PWM + 0.5);
+    
+    if (Motor == MOTOR_1)
+    {   
+        M1PIerror[encCnt] = error;
+//        M1PI[encCnt] = PWM;
+        M1PIf[encCnt] = (Kp * error) + (Ki * Integral);
+    }
+    else
+    {
+        M2PIerror[encCnt] = error;
+//        M2PI[encCnt] = PWM;
+        M2PIf[encCnt] =  (Kp * error) + (Ki * Integral); 
+    }
+    
+    PWM += (Motor == MOTOR_1)? OC4RS: OC3RS; 
 
     if (PWM > MaxPWM)
     {
@@ -369,7 +402,7 @@ uint16 PI( uint16 ActualEncoder, uint16 TrgtEncoder, uint8 Motor )
         }
     } 
     
-    return PWM;
+    return (uint16) PWM;
 }
 
 //****************************************************************************
@@ -397,21 +430,25 @@ void SetSpeed( uint32 Speed)
             MotorSpeedCtrl( SUPER_SLOW_SPEED_INIT, SUPER_SLOW_SPEED_INIT+40 );                            
             TargetEncoder = SUPER_SLOW_SPEED;
             MaxPWM = SUPER_SLOW_SPEED_INIT + 150;
-            MinPWM = SUPER_SLOW_SPEED_INIT - 150;            
+            MinPWM = SUPER_SLOW_SPEED_INIT - 150;        
+            SpeedCheck = SUPER_SLOW_SPEED_CHK;
             Speed = SUPER_SLOW;            
             break;            
         case(SLOW):
-            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+20 );                            
+            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+40 );  
+//            MotorSpeedCtrl( 0, SLOW_SPEED_INIT );  
             TargetEncoder = SLOW_SPEED;   
             MaxPWM = SLOW_SPEED_INIT + 150;
-            MinPWM = SLOW_SPEED_INIT - 150;              
+            MinPWM = SLOW_SPEED_INIT - 150;  
+            SpeedCheck = SLOW_SPEED_CHK;            
             Speed = SLOW;
             break;
         case(MED):
             MotorSpeedCtrl( MED_SPEED_INIT, MED_SPEED_INIT+30 );                            
             TargetEncoder = MED_SPEED; 
             MaxPWM = MED_SPEED_INIT + 150;
-            MinPWM = MED_SPEED_INIT - 150;              
+            MinPWM = MED_SPEED_INIT - 150;    
+            SpeedCheck = MED_SPEED_CHK;                        
             Speed = MED;            
             break;
         default:
@@ -504,7 +541,7 @@ void SensorCalc()
 ////    {
 //        if (cnt == 40)
 //        {
-////            LATAbits.LATA0 = 1;         
+////            LATAbits.LATA7 = 1;         
 ////            DebugFlag();   
 //            cnt = 0;
 //        }
@@ -513,3 +550,13 @@ void SensorCalc()
 //        cnt ++;
 ////    }
 }  
+
+uint8 FireVerify( uint8 VerifyFire )
+{
+    uint8 test = 10;
+    // I2C Code
+    
+    
+    
+    return 0;
+}

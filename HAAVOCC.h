@@ -25,12 +25,16 @@ typedef unsigned int uint32;
 typedef signed int sint32;
 
 #define MED_SPEED_INIT              1880 
-#define SLOW_SPEED_INIT             620 
+#define SLOW_SPEED_INIT             650 
 #define SUPER_SLOW_SPEED_INIT       530 
 
-#define MED_SPEED           250
-#define SLOW_SPEED          90
-#define SUPER_SLOW_SPEED    70
+#define MED_SPEED           225
+#define SLOW_SPEED          80
+#define SUPER_SLOW_SPEED    60
+
+#define MED_SPEED_CHK           375
+#define SLOW_SPEED_CHK          135
+#define SUPER_SLOW_SPEED_CHK    105
 
 #define RIGHT_TURN         650
 #define LEFT_TURN          650
@@ -65,6 +69,7 @@ uint16 PI( uint16 ActualEncoder, uint16 TargetEncoder, uint8 Motor );
 void SetSpeed( uint32 Speed);
 void SetDirection( uint32 Direction);
 void SensorCalc();
+uint8 FireVerify( uint8 VerifyFire );
 
 //****************************************************************************
 // 
@@ -80,6 +85,15 @@ enum HAAVOCC_STATES
     FIRE_EXTINGUISH,
     IDLE
 };
+
+enum NAVIGATE_STATES
+{
+    FOLLOW_ROUTE,
+    REROUTE_TO_FIRE,
+    STOP,
+    RETURN_TO_ROUTE
+};
+
 
 enum SPEEDS
 {
@@ -109,6 +123,13 @@ enum MOTORS
     MOTOR_1 = 0,
     MOTOR_2 = 1
 };
+
+enum VEIRFY_FIRE_TEMP
+{
+    VRFY_FIRE = 0,
+    VRFY_FIRE_EXT = 1
+};
+
 //****************************************************************************
 //
 //                              Global Variables
@@ -117,26 +138,30 @@ enum MOTORS
 uint8 Map[84][30];
 uint8 State;
 
+uint16 AN0ADC;
 uint16 AN1ADC;
 uint16 AN4ADC;
 uint16 AN5ADC;
+uint16 AN6ADC;
 uint16 AN9ADC;
 uint16 AN10ADC;
+uint16 AN11ADC;
+uint16 AN12ADC;
 uint16 ANADC;
 uint8 SensorEvalFlag;
 
 uint32 M1PosEdgeCnt;
 uint32 M2PosEdgeCnt;
 
-uint16 IC4PosEdgeTime;
-uint16 IC4NegEdgeTime;
+uint16 IC1PosEdgeTime;
+uint16 IC1NegEdgeTime;
 uint16 DC;
 float  Hz;
 uint32 TM364PS;
 float  CalcSensPer;
 float  Input;
 uint8  USSensorFlag;
-uint32 IC4EdgeCnt;
+uint32 IC1EdgeCnt;
 uint32 PersistantBuffer;
 
 uint8  AdjustSpeedFlag;
@@ -147,6 +172,9 @@ uint8 Speed;
 
 float M1Integral;
 float M2Integral;
+
+uint8 Extinguish;
+
 // DEBUG
 uint32 TEST4;
 uint32 CatchUp;
@@ -163,6 +191,7 @@ uint32 TurnCnt;
 uint32 StartTurnCnt;
 uint32 MaxPWM;
 uint32 MinPWM;
+uint32 SpeedCheck;
 
 uint32 M2Faster;
 uint32 M1Faster;
@@ -177,9 +206,11 @@ uint16 ADC10[40];
 float  inch;
 uint32 distance;
 sint32 distanceDiff;
+float  encAdjust;
 uint8  SpeedUp;
 uint32 distDifCnt;
 sint32 maxDistDiff;
+sint32 maxDistDiffNeg;
         
 uint32 TestAdjust;
 uint8  Debug;
@@ -197,9 +228,17 @@ uint16 lastM2;
 uint16 m1target;
 uint16 m2target;
 
-uint16 M1EncCounts[500];
-uint16 M2EncCounts[500]; 
-uint16 M1PWMCounts[500];
-uint16 M2PWMCounts[500]; 
+uint16 M1EncCounts[1002];
+uint16 M2EncCounts[1002]; 
+uint16 M1PWMCounts[1002];
+uint16 M2PWMCounts[1002]; 
+//sint16 M1PI[1002];
+//sint16 M2PI[1002]; 
+float  M1PIf[1002];
+float  M2PIf[1002]; 
+sint16  M1PIerror[1002];
+sint16  M2PIerror[1002]; 
+sint16  MdistDiff[1002]; 
+
 uint16 encCnt;        
 #endif	/* HAVVOCC_H */
