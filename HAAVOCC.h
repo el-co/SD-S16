@@ -25,7 +25,7 @@ typedef unsigned int uint32;
 typedef signed int sint32;
 
 #define MED_SPEED_INIT              1880 
-#define SLOW_SPEED_INIT             650 
+#define SLOW_SPEED_INIT             700 
 #define SUPER_SLOW_SPEED_INIT       530 
 
 #define MED_SPEED           225
@@ -36,9 +36,13 @@ typedef signed int sint32;
 #define SLOW_SPEED_CHK          135
 #define SUPER_SLOW_SPEED_CHK    105
 
-#define RIGHT_TURN         650
-#define LEFT_TURN          650
-#define FULL_TURN          1400
+#define RIGHT_TURN_RVS         705
+#define LEFT_TURN_RVS          705
+#define FULL_TURN_RVS          1415
+#define RIGHT_TURN_FWD         705
+#define LEFT_TURN_FWD          705
+#define FULL_TURN_FWD          1415
+
 //****************************************************************************
 //
 //
@@ -107,6 +111,8 @@ enum DIRECTION
 {
     FORWARD,
     REVERSE,
+    STALL_M1,
+    STALL_M2,
     LEFT_90,
     RIGHT_90,
     TURN_180
@@ -115,7 +121,9 @@ enum DIRECTION
 enum WHEEL_DIRECTION
 {
     RVS = 0,
-    FWD = 1
+    FWD = 1,
+    STLL  = 2,
+    IGN = 3
 };
 
 enum MOTORS
@@ -184,11 +192,17 @@ uint32 M1Distance;
 uint32 M2Distance;
 uint32 M1Skipped;
 uint32 M2Skipped;
-uint32 MotorTurnDistance;
-uint8  MotorTurnCheck;
+uint32 FwdTurnDist;
+uint8  FwdTurnCheck;
+uint32 RvsTurnDist;
+uint8  RvsTurnCheck;
 uint8  TurnFlag;
-uint32 TurnCnt;
-uint32 StartTurnCnt;
+uint32 FwdTurnCnt;
+uint32 RvsTurnCnt;
+uint8  FwdTurnDone;
+uint8  RvsTurnDone;
+
+//uint32 StartTurnCnt;
 uint32 MaxPWM;
 uint32 MinPWM;
 uint32 SpeedCheck;
@@ -228,17 +242,22 @@ uint16 lastM2;
 uint16 m1target;
 uint16 m2target;
 
-uint16 M1EncCounts[1002];
-uint16 M2EncCounts[1002]; 
-uint16 M1PWMCounts[1002];
-uint16 M2PWMCounts[1002]; 
-//sint16 M1PI[1002];
-//sint16 M2PI[1002]; 
-float  M1PIf[1002];
-float  M2PIf[1002]; 
-sint16  M1PIerror[1002];
-sint16  M2PIerror[1002]; 
-sint16  MdistDiff[1002]; 
+//uint16 M1EncCounts[1002];
+//uint16 M2EncCounts[1002]; 
+//uint16 M1PWMCounts[1002];
+//uint16 M2PWMCounts[1002]; 
+////sint16 M1PI[1002];
+////sint16 M2PI[1002]; 
+//float  M1PIf[1002];
+//float  M2PIf[1002]; 
+//sint16  M1PIerror[1002];
+//sint16  M2PIerror[1002]; 
+//sint16  MdistDiff[1002]; 
+uint16 encCnt;    
+uint8 fl;
 
-uint16 encCnt;        
+uint32 tempRvs;
+uint32 tempFwd;
+//uint16 slowDown[6000];
+//uint16 sD;
 #endif	/* HAVVOCC_H */

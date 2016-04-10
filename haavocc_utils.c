@@ -130,7 +130,7 @@ void TimerInit(void)
     
     // TIMER 3
     T3CONbits.TCKPS = 0b110;    // 1:64 prescaler
-    PR3 = 0x7436;               // 21Hz 47.6ms
+    PR3 = 0xE86C;               // 21Hz 47.6ms
     TMR3 = 0;                   // Reset TMR2 to 0        
     
     // Timer 3 Interrupt Config
@@ -323,11 +323,50 @@ void MotorSpeedCtrl( uint32 M1Speed, uint32 M2Speed )
 //****************************************************************************
 void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection)
 {
-    // VERIFY
-    LATAbits.LATA4 = (LDirection == 0)? 1: 0;       // pin 34
-    LATBbits.LATB4 = LDirection;                    // pin 33
-    LATBbits.LATB7 = (RDirection == 0)? 1: 0;       // pin 43
-    LATBbits.LATB10 = RDirection;                   // pin 8
+    switch (LDirection)
+    {
+        case RVS:
+            LATAbits.LATA4 = FWD;       // pin 34
+            LATBbits.LATB4 = RVS;       // pin 33                
+            break;
+        case FWD:
+            LATAbits.LATA4 = RVS;       // pin 34
+            LATBbits.LATB4 = FWD;       // pin 33    
+            break;
+        case STLL:
+            LATAbits.LATA4 = FWD;       // pin 34
+            LATBbits.LATB4 = FWD;       // pin 33                  
+            break;
+        case IGN:               
+            break;
+        default:
+            break;
+    }        
+ 
+    switch (RDirection)
+    {
+        case RVS:
+            LATBbits.LATB7 = FWD;       // pin 43
+            LATBbits.LATB10 = RVS;      // pin 8                
+            break;
+        case FWD:
+            LATBbits.LATB7 = RVS;       // pin 43
+            LATBbits.LATB10 = FWD;      // pin 8    
+            break;
+        case STLL:
+            LATBbits.LATB7 = FWD;       // pin 43
+            LATBbits.LATB10 = FWD;      // pin 8                  
+            break;
+        case IGN:               
+            break;
+        default:
+            break;
+    }
+//        LATAbits.LATA4 = (LDirection == RVS)? FWD: RVS;         // pin 34
+//        LATBbits.LATB4 = LDirection;                            // pin 33
+//        LATBbits.LATB7 = (RDirection == RVS)? FWD: RVS;         // pin 43
+//        LATBbits.LATB10 = RDirection;                           // pin 8
+   
 }
 
 //****************************************************************************
@@ -346,8 +385,8 @@ uint16 PI( uint16 ActualEncoder, uint16 TrgtEncoder, uint8 Motor )
 {
 
     float Kp = 0.4;
-    float Kp1 = 0.3; 
-    float Kp2 = 0.7;    
+    float Kp1 = 0.41; 
+    float Kp2 = 0.41;   
     float Ki = 0.001;     
     float dt = 0.072;
     
@@ -364,18 +403,18 @@ uint16 PI( uint16 ActualEncoder, uint16 TrgtEncoder, uint8 Motor )
     
     PWM = (sint16) (( PWM < 0 )? PWM - 0.5: PWM + 0.5);
     
-    if (Motor == MOTOR_1)
-    {   
-        M1PIerror[encCnt] = error;
-//        M1PI[encCnt] = PWM;
-        M1PIf[encCnt] = (Kp * error) + (Ki * Integral);
-    }
-    else
-    {
-        M2PIerror[encCnt] = error;
-//        M2PI[encCnt] = PWM;
-        M2PIf[encCnt] =  (Kp * error) + (Ki * Integral); 
-    }
+//    if (Motor == MOTOR_1)
+//    {   
+//        M1PIerror[encCnt] = error;
+////        M1PI[encCnt] = PWM;
+//        M1PIf[encCnt] = (Kp * error) + (Ki * Integral);
+//    }
+//    else
+//    {
+//        M2PIerror[encCnt] = error;
+////        M2PI[encCnt] = PWM;
+//        M2PIf[encCnt] =  (Kp * error) + (Ki * Integral); 
+//    }
     
     PWM += (Motor == MOTOR_1)? OC4RS: OC3RS; 
 
@@ -415,7 +454,7 @@ uint16 PI( uint16 ActualEncoder, uint16 TrgtEncoder, uint8 Motor )
 // Return:      void
 //
 //****************************************************************************
-void SetSpeed( uint32 Speed)
+void SetSpeed( uint32 Speed )
 {
     switch(Speed)
     {
@@ -435,7 +474,7 @@ void SetSpeed( uint32 Speed)
             Speed = SUPER_SLOW;            
             break;            
         case(SLOW):
-            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+40 );  
+            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+35 );  
 //            MotorSpeedCtrl( 0, SLOW_SPEED_INIT );  
             TargetEncoder = SLOW_SPEED;   
             MaxPWM = SLOW_SPEED_INIT + 150;
@@ -475,44 +514,56 @@ void SetDirection( uint32 Direction)
     {
         case(FORWARD):
                 MotorDirectionCtrl( FWD, FWD );                
-                TurnCnt = 0;
                 TurnFlag = 0;
             break;
         case(REVERSE):
                 MotorDirectionCtrl( RVS, RVS );   
-                TurnCnt = 0;
                 TurnFlag = 0;                
-            break;            
+            break;  
+        case(STALL_M1):
+                MotorDirectionCtrl( STLL, IGN );   
+            break;              
+        case(STALL_M2):
+                MotorDirectionCtrl( IGN, STLL );   
+            break;              
         case(LEFT_90):
-                MotorDirectionCtrl( RVS, FWD );  
+                MotorDirectionCtrl( FWD, RVS );  
                 M1Distance = 0;
                 M2Distance = 0;    
-                MotorTurnCheck = MOTOR_2;               
-                StartTurnCnt = M1PosEdgeCnt;                
-                TurnCnt = LEFT_TURN;
+                M1PosEdgeCnt = 0;    
+                M2PosEdgeCnt = 0;  
+                FwdTurnDone = 0;
+                FwdTurnCheck = MOTOR_1;                                 
+                FwdTurnCnt = LEFT_TURN_FWD;
+                RvsTurnCnt = LEFT_TURN_RVS;                
                 TurnFlag = 1;                
             break;
         case(RIGHT_90):
-                MotorDirectionCtrl( FWD, RVS ); 
+                MotorDirectionCtrl( RVS, FWD ); 
                 M1Distance = 0; 
                 M2Distance = 0;   
-                MotorTurnCheck = MOTOR_1;                  
-                StartTurnCnt = M1PosEdgeCnt;                  
-                TurnCnt = RIGHT_TURN;
+                M1PosEdgeCnt = 0;   
+                M2PosEdgeCnt = 0; 
+                FwdTurnDone = 0;                
+                FwdTurnCheck = MOTOR_2;                                                   
+                FwdTurnCnt = RIGHT_TURN_FWD;
+                RvsTurnCnt = RIGHT_TURN_RVS;                
                 TurnFlag = 1;                
             break;
         case(TURN_180):
-                MotorDirectionCtrl( FWD, RVS ); 
+                MotorDirectionCtrl( RVS, FWD ); 
                 M1Distance = 0;   
                 M2Distance = 0;     
-                MotorTurnCheck = MOTOR_1;                 
-                StartTurnCnt = M1PosEdgeCnt;                
-                TurnCnt = FULL_TURN;
+                M1PosEdgeCnt = 0;    
+                M2PosEdgeCnt = 0;
+                FwdTurnDone = 0;                
+                FwdTurnCheck = MOTOR_1;                                            
+                FwdTurnCnt = FULL_TURN_FWD;
+                RvsTurnCnt = FULL_TURN_RVS;               
                 TurnFlag = 1;               
             break;
         default:
                 MotorDirectionCtrl( FWD, FWD );
-                TurnCnt = 0;
                 TurnFlag = 0;         
             break;            
     }    
@@ -549,6 +600,9 @@ void SensorCalc()
 //        ADC10[cnt] = AN10ADC;
 //        cnt ++;
 ////    }
+    
+    
+    
 }  
 
 uint8 FireVerify( uint8 VerifyFire )

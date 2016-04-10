@@ -45,6 +45,8 @@ void main(void)
     turnFixCnt2 = 0;    
     LATCbits.LATC7 = 0;
     encCnt = 0;
+    fl=0;
+//    sD = 0;
     while(1)
     { 
         switch(State)
@@ -53,7 +55,7 @@ void main(void)
                 // LED ON
                 // Set direction pins and speed                           
                 CatchUp = 0;
-                SetSpeed( SLOW );  
+                SetSpeed( OFF );  
                 SetDirection( FORWARD );                
                 State = NAVIGATE; 
                 break;
@@ -137,10 +139,66 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
 
     if  (State == NAVIGATE && TurnFlag == 1) 
     {
-        MotorTurnDistance = (MotorTurnCheck == MOTOR_1)? (M1Distance + M1PosEdgeCnt): (M2Distance + M2PosEdgeCnt);
-        MotorTurnDistance -= StartTurnCnt;
+        if (FwdTurnCheck == MOTOR_1)
+        {
+            FwdTurnDist = M1Distance + M1PosEdgeCnt;
+            RvsTurnDist = M2Distance + M2PosEdgeCnt;
+            if ( FwdTurnDist >= FwdTurnCnt )
+            {
+                if (FwdTurnDone == 0)
+                {
+                    tempFwd = FwdTurnDist;
+                }
+                M1PosEdgeCnt = 0;
+                Motor1Speed = 0;
+                SetDirection( STALL_M1 );
+                AdjustSpeedFlag =  1;  
 
-        if ( MotorTurnDistance >= TurnCnt )
+                FwdTurnDone = 1;                
+            }
+            if ( RvsTurnDist >= RvsTurnCnt )
+            {
+                if (RvsTurnDone == 0)
+                {
+                    tempRvs = RvsTurnDist;
+                }
+//
+//                slowDown[sD] = M2PosEdgeCnt;
+//                sD++;
+                M2PosEdgeCnt = 0;
+                Motor2Speed = 0;
+                SetDirection( STALL_M2 );
+                AdjustSpeedFlag =  1;
+
+                RvsTurnDone = 1;                
+            }
+            
+        }                          
+        else
+        {
+            FwdTurnDist = M2Distance + M2PosEdgeCnt;              
+            RvsTurnDist = M1Distance + M1PosEdgeCnt;
+            if ( FwdTurnDist >= FwdTurnCnt )
+            {
+                M2PosEdgeCnt = 0;
+                Motor2Speed = 0;
+                SetDirection( STALL_M2 );
+                AdjustSpeedFlag =  1;
+
+                FwdTurnDone = 1;
+            }
+            if ( RvsTurnDist >= RvsTurnCnt )
+            {
+                M1PosEdgeCnt = 0;
+                Motor1Speed = 0;
+                SetDirection( STALL_M1 );
+                AdjustSpeedFlag =  1;  
+
+                RvsTurnDone = 1;    
+            }            
+        }
+        
+        if ( (FwdTurnDone != 0) & (RvsTurnDone != 0) )
         {
             SetDirection( FORWARD );
             SetSpeed( OFF );
@@ -148,6 +206,8 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
             M2Distance = 0;   
             distanceDiff = 0;            
             TurnFlag = 0;
+            FwdTurnDone = 0;
+            RvsTurnDone = 0;           
 //            SpeedUp = 0;
             Debug = 1;
 //            TEST4 = 0;  
@@ -190,16 +250,21 @@ void __ISR (12, IPL2SOFT) Timer3IntHandler(void)
 void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 {
     IFS0bits.T4IF = 0;      // Turn Flag Off
-//    if (TEST4++ > 25 && SpeedUp == 0)
+//    if (TEST4++ > 50 && SpeedUp == 0)
 //    {
 //        
 ////        SetSpeed(MED); 
-//        SetDirection( TURN_180 );           
+//        SetDirection( RIGHT_90 );           
 //        SpeedUp = 1;
 ////        TEST4 = 0;
 // 
 //        Fixed = 0;
 //    }  
+    
+//    if (M2PosEdgeCnt == 80 && M1PosEdgeCnt == 80)
+//    {
+//        Fixed = 0;
+//    }
     
     M2Distance += M2PosEdgeCnt;    
     M1Distance += M1PosEdgeCnt;    
@@ -223,30 +288,38 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
         {
             CatchUp--;
             
-            MdistDiff[encCnt] = distanceDiff;
-            M1EncCounts[encCnt] = M1PosEdgeCnt;
-            M2EncCounts[encCnt] = M2PosEdgeCnt;
-        
-            M1PWMCounts[encCnt] = Motor1Speed;
-            M2PWMCounts[encCnt] = Motor2Speed;            
-                                   
-            encCnt++;    
-            if (encCnt >= 1002)
-            {
-                encCnt=0;          
-            }
+//            MdistDiff[encCnt] = distanceDiff;
+//            M1EncCounts[encCnt] = M1PosEdgeCnt;
+//            M2EncCounts[encCnt] = M2PosEdgeCnt;
+//        
+//            M1PWMCounts[encCnt] = Motor1Speed;
+//            M2PWMCounts[encCnt] = Motor2Speed;            
+//                                   
+//            encCnt++;    
+//            if (encCnt >= 1002)
+//            {
+//                if (fl == 0)
+//                {
+//                    fl = 1;
+//                    encCnt = 0;
+//                }
+//                else
+//                {
+//                    encCnt = 0;
+//                }
+//            }
             
             if (distanceDiff > 0 && TurnFlag == 0) // Motor 1 faster
             { 
                 LATCbits.LATC7 = 1;                 
                 
-                encAdjust = distanceDiff/3;
+                encAdjust = distanceDiff/3.6;
                 distanceDiff = (sint32) (( encAdjust < 0 )? encAdjust - 0.5: encAdjust + 0.5);
                 
                 m2target = TargetEncoder + distanceDiff;
                 m1target = TargetEncoder - distanceDiff;
             
-                Motor2Speed = PI(M2PosEdgeCnt, m2target, MOTOR_2);
+                Motor2Speed = PI(M2PosEdgeCnt, m2target+1, MOTOR_2);
                 Motor1Speed = PI(M1PosEdgeCnt, m1target, MOTOR_1);                  
                 
                 M1Faster = 1;      
@@ -256,13 +329,13 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
             {   
                 LATCbits.LATC7 = 1; 
 
-                encAdjust = distanceDiff/3;
+                encAdjust = distanceDiff/3.6;
                 distanceDiff = (sint32) (( encAdjust < 0 )? encAdjust - 0.5: encAdjust + 0.5);                
                 
                 m2target = TargetEncoder + distanceDiff;
                 m1target = TargetEncoder - distanceDiff;
             
-                Motor2Speed = PI(M2PosEdgeCnt, m2target, MOTOR_2);
+                Motor2Speed = PI(M2PosEdgeCnt, m2target+1, MOTOR_2);
                 Motor1Speed = PI(M1PosEdgeCnt, m1target, MOTOR_1);                                
                
                 M2Faster = 1;            
@@ -271,14 +344,30 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
             else 
             {                           
                 LATCbits.LATC7 = 0;   
-                
-                Motor2Speed = PI(M2PosEdgeCnt, TargetEncoder, MOTOR_2);
-                Motor1Speed = PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);      
+                   
+                if ( TurnFlag == 1 )
+                {
+                    if ( FwdTurnCheck == MOTOR_1 )
+                    {
+                        Motor1Speed = (FwdTurnDone != 0)? 0: PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);
+                        Motor2Speed = (RvsTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+1, MOTOR_2);                        
+                    }
+                    else 
+                    {
+                        Motor1Speed = (RvsTurnDone != 0)? 0: PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);
+                        Motor2Speed = (FwdTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+1, MOTOR_2); 
+                    }                  
+                }
+                else 
+                {
+                    Motor2Speed = PI(M2PosEdgeCnt, TargetEncoder+1, MOTOR_2);
+                    Motor1Speed = PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);      
+                }
                 
                 M1Faster = 0;
                 M2Faster = 0;                      
             }
-            
+                    
             lastM1 = M1PosEdgeCnt;
             lastM2 = M2PosEdgeCnt;
               
@@ -345,6 +434,13 @@ void __ISR (23, IPL3SOFT) ADCIntHandler(void)
 //****************************************************************************
 void __ISR (5, IPL4SOFT) IC1IntHandler(void)
 {
+    /*
+     49ms refresh rate
+     * 147 us = 1 inch
+     
+     */
+    
+    
     IFS0bits.IC1IF = 0;     // Turn Flag Off	 
         
     if (IC1CONbits.ICBNE)
