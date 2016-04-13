@@ -46,41 +46,71 @@ void main(void)
     LATCbits.LATC7 = 0;
     encCnt = 0;
     fl=0;
+    in = 0;
 //    sD = 0;
     while(1)
     { 
         switch(State)
         {
+            case IDLE:
+                State = START;
+                // Do nothing
+                // Push button to go to START
+                // select between mode 1 and mode 2
+                break;  
             case START:
                 // LED ON
-                // Set direction pins and speed                           
+                // Set direction pins and speed   
+                // Reset values as needed
                 CatchUp = 0;
-                SetSpeed( OFF );  
+                SetSpeed( SLOW );  
                 SetDirection( FORWARD );                
                 State = NAVIGATE; 
                 break;
             case NAVIGATE:
+                // 	Use map to navigate
+                CheckMap();
+                //  Use pi code to adjust speed                
                 if ( AdjustSpeedFlag != 0 )
                 {
-                    MotorSpeedCtrl( Motor1Speed, Motor2Speed );
-                    
+                    MotorSpeedCtrl( Motor1Speed, Motor2Speed );                   
                     AdjustSpeedFlag = 0;
                 }
+
+                State = NAVIGATE; 
+                
+                if (USSensorFlag != 0)
+                {
+                    CheckFrontSensor();
+                    USSensorFlag = 0;
+                }
+                // 	Collision avoidance (ADC)   
+                // 	Check IR photo sensors (ADC)                        
                 if ( SensorEvalFlag != 0 )
                 {
-//                    SensorCalc();                 
+                    CheckCollisionSensors();             
+                    if ( CheckFlameDetectors() != 0 )  
+                    {
+                        State = FIRE_DETECTED;
+                    }
                     SensorEvalFlag = 0;
                 }                
-                
-                State = NAVIGATE; 
-                // navigate function
+
                 break;
             case FIRE_DETECTED:
-                // fire detected function
+                // Navigate to location
+                // Keep track of reroute
+                ReRoute();
+                // Use IR photo sensors (ADC) to center flame source
+                if ( CenterFlame() != 0 )
+                {
+                    State = FIRE_VERIFY;
+                }
+
                 break;
             case FIRE_VERIFY:
-                // fire verify function
-                if (FireVerify(VRFY_FIRE) != 0)
+                // use temp sensors to verify flame
+                if (FireVerify() != 0)
                 {
                     Extinguish = 1;
                     State = FIRE_EXTINGUISH;   
@@ -91,26 +121,32 @@ void main(void)
                 }
                 
                 break;
-            case FIRE_EXTINGUISH:
-                // fire extinguish function
-                // 100ms pulse to solenoid
-                while (Extinguish != 0)
+            case RETURN_ROUTE:
+                // return to route
+                if ( ReRoute() == 0 )
                 {
-                    
+                    State = NAVIGATE;
+                }
+                
+                break;
+            case FIRE_EXTINGUISH:
+                
+                // 100ms pulse to solenoid
+                // check fire temp to verify fire extinguished
+                while (Extinguish != 0)
+                {                
                     // 100ms pulse to solenoid
+                    ShootWater();
                     
-                    if ( FireVerify( VRFY_FIRE_EXT ) != 0 )
+                    if ( FireVerify() == 0 )
                     {
                         Extinguish = 0;
                     }
                 }       
                 
-                break;
-            case IDLE:
-                // idle function
-                break;              
+                break;            
             default:
-                State = START;
+                State = IDLE;
                 break;
         }                    
     }
@@ -201,7 +237,7 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
         if ( (FwdTurnDone != 0) & (RvsTurnDone != 0) )
         {
             SetDirection( FORWARD );
-            SetSpeed( OFF );
+            SetSpeed( SLOW );
             M1Distance = 0;
             M2Distance = 0;   
             distanceDiff = 0;            
@@ -218,7 +254,7 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
 //****************************************************************************
 // Function:    Timer3IntHandler
 // 
-// Description: Timer interrupt at 21Hz (47.6ms).  Used for IC4 of sensor. 
+// Description: Timer interrupt at 21Hz (49 ms).  Used for IC4 of sensor. 
 //                      ~should be 49ms
 // Params:      void
 // 
@@ -228,12 +264,6 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
 void __ISR (12, IPL2SOFT) Timer3IntHandler(void)
 {
     IFS0bits.T3IF = 0;      // Turn Flag Off
-
-    if (USSensorFlag != 0)
-    {
-       DC = IC1NegEdgeTime - IC1PosEdgeTime; 
-       CalcSensPer = DC/Input;
-    }
   
 }
 
@@ -454,6 +484,7 @@ void __ISR (5, IPL4SOFT) IC1IntHandler(void)
             IC1NegEdgeTime = IC1BUF; 
             if ( IC1NegEdgeTime > IC1PosEdgeTime )
             {
+                SensDiff = IC1NegEdgeTime - IC1PosEdgeTime;
                 USSensorFlag = 1;
             }
         }

@@ -25,7 +25,7 @@ void Init(void)
 {
     INTEnableSystemMultiVectoredInt(); 
     
-    State = START; 
+    State = IDLE; 
  
     GPIOInit();   
     TimerInit();
@@ -130,8 +130,9 @@ void TimerInit(void)
     
     // TIMER 3
     T3CONbits.TCKPS = 0b110;    // 1:64 prescaler
-    PR3 = 0xE86C;               // 21Hz 47.6ms
-    TMR3 = 0;                   // Reset TMR2 to 0        
+    PR3 = 0x77A1;               // 49ms 0x77A1
+                                // 98 0xEF42
+    TMR3 = 0;                   // Reset TMR3 to 0        
     
     // Timer 3 Interrupt Config
     IEC0bits.T3IE = 0;  // TMR3 Interrupt Disable 
@@ -533,6 +534,7 @@ void SetDirection( uint32 Direction)
                 M1PosEdgeCnt = 0;    
                 M2PosEdgeCnt = 0;  
                 FwdTurnDone = 0;
+                RvsTurnDone = 0;
                 FwdTurnCheck = MOTOR_1;                                 
                 FwdTurnCnt = LEFT_TURN_FWD;
                 RvsTurnCnt = LEFT_TURN_RVS;                
@@ -545,6 +547,7 @@ void SetDirection( uint32 Direction)
                 M1PosEdgeCnt = 0;   
                 M2PosEdgeCnt = 0; 
                 FwdTurnDone = 0;                
+                RvsTurnDone = 0;
                 FwdTurnCheck = MOTOR_2;                                                   
                 FwdTurnCnt = RIGHT_TURN_FWD;
                 RvsTurnCnt = RIGHT_TURN_RVS;                
@@ -557,11 +560,38 @@ void SetDirection( uint32 Direction)
                 M1PosEdgeCnt = 0;    
                 M2PosEdgeCnt = 0;
                 FwdTurnDone = 0;                
+                RvsTurnDone = 0;
                 FwdTurnCheck = MOTOR_1;                                            
                 FwdTurnCnt = FULL_TURN_FWD;
                 RvsTurnCnt = FULL_TURN_RVS;               
                 TurnFlag = 1;               
             break;
+        case(LEFT_SCAN):
+                MotorDirectionCtrl( FWD, RVS );  
+                M1Distance = 0;
+                M2Distance = 0;    
+                M1PosEdgeCnt = 0;    
+                M2PosEdgeCnt = 0;  
+                FwdTurnDone = 0;
+                RvsTurnDone = 0;
+                FwdTurnCheck = MOTOR_1;                                 
+                FwdTurnCnt = SCAN_FWD;
+                RvsTurnCnt = SCAN_RVS;                
+                TurnFlag = 1;                          
+            break;
+        case(RIGHT_SCAN):
+                MotorDirectionCtrl( RVS, FWD ); 
+                M1Distance = 0; 
+                M2Distance = 0;   
+                M1PosEdgeCnt = 0;   
+                M2PosEdgeCnt = 0; 
+                FwdTurnDone = 0;                
+                RvsTurnDone = 0;
+                FwdTurnCheck = MOTOR_2;                                                   
+                FwdTurnCnt = SCAN_FWD;
+                RvsTurnCnt = SCAN_RVS;                
+                TurnFlag = 1;            
+            break;        
         default:
                 MotorDirectionCtrl( FWD, FWD );
                 TurnFlag = 0;         
@@ -569,8 +599,11 @@ void SetDirection( uint32 Direction)
     }    
 }
 
-void SensorCalc() 
+uint8 CheckFlameDetectors() 
 {    
+    uint8 FlameDetected = 0;
+  
+/*   
     i = AN10ADC; // INPUT BUFFER scaled to a 5V input
     
 //    analog value 409 aprox 6 inch
@@ -588,29 +621,117 @@ void SensorCalc()
         MotorSpeedCtrl( Motor1Speed, Motor2Speed );//stop
     
     }
-////    if (inch < 24)
-////    {
-//        if (cnt == 40)
+*/
+    
+    return FlameDetected;
+} 
+
+uint8 CenterFlame()
+{
+   uint8 FlameCentered = 0;
+
+//    uint8 flameDetected = 0;
+//    i = 1 ; // INPUT BUFFER scaled to a 5V input
+//    ADCBUFF[0]= AN10ADC;
+//    ADCBUFF[1]= AN5ADC;
+//    
+//    if ( ADCBUFF[0] > 20 )
+//    {
+//        flameDetected = 1;
+//    }
+//    if ( ADCBUFF[1] > 20 )
+//    {
+//        flameDetected = 1;
+//    }
+//       if (cnt == 40)
 //        {
-////            LATAbits.LATA7 = 1;         
-////            DebugFlag();   
+//    if (flameDetected != 0)
+//    {
+//            LATAbits.LATA0 = 1;  
+//                    
+//                if (ADCBUFF[i] > ADCBUFF[i-1])
+//                {
+//                    RealFlame = i;
+//                }
+//                else /////////////////////////////
+//                {
+//                    RealFlame = 0;
+//                }
+//            if (RealFlame != 0)// center sensor
+//            {
+//                KeepAdjust = 0;
+//                // keep adjust will turn robot
+//            }
+//            else 
+//            {
+//                KeepAdjust  = 1;
+//                // stop and put out flame
+//            }
+//    }   
+//            
+//            cnt = 0;
+//       }
+//        
+//        ADC10[cnt] = AN10ADC;
+//        ADC5[cnt] = AN5ADC;
+//        cnt ++;
+//        
+//        if (cnt > 40)
+//        {
 //            cnt = 0;
 //        }
-//        Inches[cnt] = inch;
-//        ADC10[cnt] = AN10ADC;
-//        cnt ++;
-////    }
     
-    
-    
-}  
+   return FlameCentered;
+}
 
-uint8 FireVerify( uint8 VerifyFire )
+void CheckMap()
 {
-    uint8 test = 10;
-    // I2C Code
+    
+}
+
+void CheckFrontSensor()
+{
+    Sens[in] = SensDiff * 0.0108844;
+       
+    if (SensDiff < 1063 && TurnFlag == 0)
+    {
+       SetDirection( RIGHT_90 );      
+    }     
+       
+    in++;
+    if (in >= 100)
+    {
+       in = 0;
+    }   
+}
+
+void CheckCollisionSensors()
+{
+    if (USSensorFlag != 0)
+    {
+  
+    }
     
     
     
-    return 0;
+}
+uint8 ReRoute()
+{
+    uint8 AtMapLocation = 1;
+    
+    return AtMapLocation;
+}
+void ShootWater()
+{
+    
+}
+
+uint8 FireVerify()
+{
+    uint8 fireDetected = 0;
+    
+   
+    
+    
+    return fireDetected;
 }

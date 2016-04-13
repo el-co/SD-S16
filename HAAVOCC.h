@@ -24,9 +24,9 @@ typedef signed short sint16;
 typedef unsigned int uint32;
 typedef signed int sint32;
 
-#define MED_SPEED_INIT              1880 
-#define SLOW_SPEED_INIT             700 
-#define SUPER_SLOW_SPEED_INIT       530 
+#define MED_SPEED_INIT          1880 
+#define SLOW_SPEED_INIT         700 
+#define SUPER_SLOW_SPEED_INIT   530 
 
 #define MED_SPEED           225
 #define SLOW_SPEED          80
@@ -36,12 +36,16 @@ typedef signed int sint32;
 #define SLOW_SPEED_CHK          135
 #define SUPER_SLOW_SPEED_CHK    105
 
-#define RIGHT_TURN_RVS         705
-#define LEFT_TURN_RVS          705
-#define FULL_TURN_RVS          1415
-#define RIGHT_TURN_FWD         705
-#define LEFT_TURN_FWD          705
-#define FULL_TURN_FWD          1415
+#define RIGHT_TURN_RVS          705
+#define LEFT_TURN_RVS           705
+#define FULL_TURN_RVS           1415
+#define SCAN_RVS                175
+
+#define RIGHT_TURN_FWD          705
+#define LEFT_TURN_FWD           705
+#define FULL_TURN_FWD           1415
+#define SCAN_FWD                175
+
 
 //****************************************************************************
 //
@@ -72,9 +76,14 @@ void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection);
 uint16 PI( uint16 ActualEncoder, uint16 TargetEncoder, uint8 Motor );
 void SetSpeed( uint32 Speed);
 void SetDirection( uint32 Direction);
-void SensorCalc();
-uint8 FireVerify( uint8 VerifyFire );
-
+uint8 CheckFlameDetectors();
+uint8 CenterFlame();
+void CheckMap();
+void CheckCollisionSensors();
+uint8 ReRoute();
+void ShootWater();
+uint8 FireVerify();
+void CheckFrontSensor();
 //****************************************************************************
 // 
 //                              enum Variables
@@ -86,18 +95,18 @@ enum HAAVOCC_STATES
     NAVIGATE,
     FIRE_DETECTED,
     FIRE_VERIFY,
+    RETURN_ROUTE,
     FIRE_EXTINGUISH,
     IDLE
 };
 
-enum NAVIGATE_STATES
-{
-    FOLLOW_ROUTE,
-    REROUTE_TO_FIRE,
-    STOP,
-    RETURN_TO_ROUTE
-};
-
+//enum NAVIGATE_STATES
+//{
+//    FOLLOW_ROUTE,
+//    REROUTE_TO_FIRE,
+//    STOP,
+//    RETURN_TO_ROUTE
+//};
 
 enum SPEEDS
 {
@@ -115,7 +124,9 @@ enum DIRECTION
     STALL_M2,
     LEFT_90,
     RIGHT_90,
-    TURN_180
+    TURN_180,
+    LEFT_SCAN,
+    RIGHT_SCAN
 };
 
 enum WHEEL_DIRECTION
@@ -260,4 +271,8 @@ uint32 tempRvs;
 uint32 tempFwd;
 //uint16 slowDown[6000];
 //uint16 sD;
+float SensDiff;
+
+float Sens[100];
+uint32 in;
 #endif	/* HAVVOCC_H */
