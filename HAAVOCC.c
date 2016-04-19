@@ -44,9 +44,30 @@ void main(void)
     turnFixCnt1 = 0;
     turnFixCnt2 = 0;    
     LATCbits.LATC7 = 0;
+    
+    LATAbits.LATA7 = 0;
+    LATAbits.LATA9 = 0;
+    LATAbits.LATA10 = 0;
+    LATCbits.LATC8 = 0;
+     
     encCnt = 0;
     fl=0;
     in = 0;
+    Rev = 0;
+    ScanTotal = 0;
+    xin = 0;
+    
+    maxPos = 0;
+    minPos = 0;
+    maxNeg = 0;
+    minNeg = 0;
+    avg = 0;
+    avg2 = 0;
+    
+    L1 = 0;
+    L2 = 0;
+    c1 = 0;
+    c2 = 0;
 //    sD = 0;
     while(1)
     { 
@@ -63,34 +84,109 @@ void main(void)
                 // Set direction pins and speed   
                 // Reset values as needed
                 CatchUp = 0;
-                SetSpeed( SLOW );  
+                MapIndex = 0;
+                MapDist = 0;
+                SetSpeed( OFF );  
                 SetDirection( FORWARD );                
                 State = NAVIGATE; 
                 break;
             case NAVIGATE:
                 // 	Use map to navigate
-                CheckMap();
-                //  Use pi code to adjust speed                
+                State = NAVIGATE; 
+
+//                if (MapDirection[MapIndex] != OFF)
+//                {
+//                    CheckMap();
+//                }
+                //  Use pi code to adjust speed     
+                LATCbits.LATC8 = 1; 
+                
                 if ( AdjustSpeedFlag != 0 )
                 {
                     MotorSpeedCtrl( Motor1Speed, Motor2Speed );                   
                     AdjustSpeedFlag = 0;
                 }
-
-                State = NAVIGATE; 
+              
+//                if (USSensorFlag != 0)
+//                {
+//                    CheckFrontSensor();
+//                    NextDir = FORWARD;
+//                    NextSpeed = SLOW;
+//                    USSensorFlag = 0;
+//                }
                 
-                if (USSensorFlag != 0)
-                {
-                    CheckFrontSensor();
-                    USSensorFlag = 0;
-                }
                 // 	Collision avoidance (ADC)   
                 // 	Check IR photo sensors (ADC)                        
                 if ( SensorEvalFlag != 0 )
                 {
-                    CheckCollisionSensors();             
+                    /*
+                    Rsens[xin] = IRSens[2];
+                    Rsens2[xin] = IRSens[3];
+                    
+                    Rs[(Rsens[xin]+5)/10]++;
+                    Rs2[(Rsens2[xin]+5)/10]++;
+                                        
+                    dif[xin] = Rsens[xin] - Rsens2[xin];
+                    
+                    if ( dif[xin] >= 0 )
+                    {
+                        maxPos = ( dif[xin] > maxPos )? dif[xin]: maxPos;
+                        minPos = ( dif[xin] < minPos )? dif[xin]: minPos;      
+                    }
+                    else 
+                    {
+                        maxNeg = (dif[xin] < maxNeg)? dif[xin]: maxNeg; 
+                        minNeg = (dif[xin] > minNeg)? dif[xin]: minNeg;                          
+                    }
+                    xin++;
+                 
+                    if (xin == 20)
+                    {                         
+                        for ( ii = 0; ii<102; ii++)
+                        {                        
+                            if (Rs[ii] >= c1)
+                            {
+                                L1 = ii;
+                                c1 = Rs[ii];
+                            }
+                            if (Rs2[ii] >= c2)
+                            {
+                                L2 = ii;
+                                c2 = Rs2[ii];
+                            }                            
+                        }
+                        if (L1-L2 > 2)
+                        {
+                            xin = 0;                            
+                        }
+                        if (L2-L1 > 2)
+                        {
+                            xin = 0;                            
+                        }                        
+                        xin = 0;
+                        for ( ii = 0; ii<102; ii++)
+                        {
+                            Rs[ii] = 0;
+                            Rs2[ii] = 0;
+                        } 
+                        c1 = 0;
+                        c2 = 0;
+                        L1 = 0;
+                        L2 = 0;
+                        maxPos = 0;
+                        minPos = 0;
+                        maxNeg = 0;
+                        minNeg = 0;                                             
+                    }
+                    */
+//                    CheckCollisionSensors();    
+                    
+                    
                     if ( CheckFlameDetectors() != 0 )  
                     {
+                        SetSpeed( OFF );      
+                        ScanTotal = 0;    
+                        LATAbits.LATA10 = 1;
                         State = FIRE_DETECTED;
                     }
                     SensorEvalFlag = 0;
@@ -100,17 +196,49 @@ void main(void)
             case FIRE_DETECTED:
                 // Navigate to location
                 // Keep track of reroute
-                ReRoute();
+//                ReRoute();
                 // Use IR photo sensors (ADC) to center flame source
-                if ( CenterFlame() != 0 )
+                if ( SensorEvalFlag != 0 )
                 {
-                    State = FIRE_VERIFY;
+                    // Cnter flame and get closer
+                    CntrFlame = CenterFlame();
+                    if ( CntrFlame != CENTER_FLAME )
+                    {
+                        if (CntrFlame == 2 || CntrFlame == 4) // Left Sensors
+                        {
+                            SetDirection( LEFT_SCAN ); 
+                            ScanTotal ++; 
+                        }
+                        else if (CntrFlame == 0 || CntrFlame == 1) // Right Sensors
+                        {
+                            SetDirection( RIGHT_SCAN );  
+                            ScanTotal --;                             
+                        }  
+                        SetSpeed( SUPER_SLOW );
+                        NextDir = FORWARD;  
+                        NextSpeed = OFF;                                                   
+                    }
+                    else
+                    {
+                        SetDirection( STALL_M1 );
+                        SetDirection( STALL_M2 );
+                        SetSpeed(OFF);
+                        TurnFlag = 0;
+                        LATAbits.LATA9 = 1;
+//                        I2C1Init(145); 
+                        FlameSensIdx = 0;
+                        FlameDataMin = 0;
+                        FlameDataMax = 0;
+                        State = FIRE_VERIFY;
+                   
+                    }
+                    
+                    
                 }
-
                 break;
             case FIRE_VERIFY:
                 // use temp sensors to verify flame
-                if (FireVerify() != 0)
+                if (FireVerifyTemp() != 0)
                 {
                     Extinguish = 1;
                     State = FIRE_EXTINGUISH;   
@@ -118,6 +246,44 @@ void main(void)
                 else 
                 {
                     State = NAVIGATE;                      
+                }
+                
+                if ( SensorEvalFlag != 0 )
+                {
+                    if (FlameSensCnt%100 == 0)
+                    {
+                        FlameSensIdx = FlameSensCnt%100;
+                        FlameSensData[FlameSensIdx] = FlameSens[CENTER_FLAME];
+                        
+                        if ( FlameSensData[FlameSensIdx] < FlameDataMin )
+                        {
+                            FlameDataMin = FlameSensData[FlameSensIdx];
+                        }
+                        
+                        if ( FlameSensData[FlameSensIdx] > FlameDataMax )
+                        {
+                            FlameDataMax = FlameSensData[FlameSensIdx];
+                        }
+                        
+                        if (FlameSensIdx >= 500)
+                        {
+                            if (FireVerifySens() != 0)
+                            {
+                                Extinguish = 1;
+                                State = FIRE_EXTINGUISH;   
+                            }
+                            else 
+                            {
+                                FlameSensIdx = 0
+                                FlameSensCnt = -1;        
+                                State = NAVIGATE;                      
+                            }        
+                            
+                            FlameSensIdx = 0
+                            FlameSensCnt = -1;                              
+                        }
+                    }  
+                    FlameSensCnt++;
                 }
                 
                 break;
@@ -173,7 +339,13 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
 {
     IFS0bits.T2IF = 0;      // Turn Flag Off
 
-    if  (State == NAVIGATE && TurnFlag == 1) 
+    // Motors
+    // 25 1cm
+    // 40 1.5cm
+    // 400 10cm
+    
+    
+    if  ( (State == NAVIGATE) && TurnFlag == 1) 
     {
         if (FwdTurnCheck == MOTOR_1)
         {
@@ -236,17 +408,15 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
         
         if ( (FwdTurnDone != 0) & (RvsTurnDone != 0) )
         {
-            SetDirection( FORWARD );
-            SetSpeed( SLOW );
+            SetDirection( NextDir );
+            SetSpeed( NextSpeed );
             M1Distance = 0;
             M2Distance = 0;   
             distanceDiff = 0;            
             TurnFlag = 0;
             FwdTurnDone = 0;
             RvsTurnDone = 0;           
-//            SpeedUp = 0;
             Debug = 1;
-//            TEST4 = 0;  
         }
     }
 } 
@@ -295,16 +465,24 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 //    {
 //        Fixed = 0;
 //    }
-    
-    M2Distance += M2PosEdgeCnt;    
-    M1Distance += M1PosEdgeCnt;    
+    if (MotorDir == REVERSE)
+    {
+        M2Distance -= M2PosEdgeCnt;    
+        M1Distance -= M1PosEdgeCnt;    
+    }
+    else
+    {
+        M2Distance += M2PosEdgeCnt;    
+        M1Distance += M1PosEdgeCnt;    
+    }
     
     distanceDiff = M1Distance - M2Distance;  
     maxDistDiff = ( maxDistDiff < distanceDiff )? distanceDiff: maxDistDiff;    
     maxDistDiffNeg = ( maxDistDiffNeg > distanceDiff )? distanceDiff: maxDistDiffNeg;    
 
-    if (M1Distance > 60000 || M2Distance > 60000)
+    if (M1Distance > 400 && M2Distance > 400)
     {
+        MapDist++;
         M1Distance = (distanceDiff > 0)? distanceDiff: 0;
         M2Distance = (distanceDiff < 0)? -distanceDiff: 0;       
     }
@@ -425,15 +603,16 @@ void __ISR (23, IPL3SOFT) ADCIntHandler(void)
 {   
 //   LATCbits.LATC7 ^= 1;     
    // 5 Channel sample
-   AN0ADC = ADC1BUF0;  
-   AN1ADC = ADC1BUF1;  
-   AN4ADC = ADC1BUF2;  
-   AN5ADC = ADC1BUF3;  
-   AN6ADC = ADC1BUF4;  
-   AN9ADC = ADC1BUF5;  
-   AN10ADC = ADC1BUF6;  
-   AN11ADC = ADC1BUF7;  
-   AN12ADC = ADC1BUF8;     
+   FlameSens[0] = ADC1BUF0;  // AN0
+   FlameSens[1] = ADC1BUF1;  // AN1
+   FlameSens[2] = ADC1BUF2;  // AN4  
+   FlameSens[3] = ADC1BUF3;  // AN5
+   FlameSens[4] = ADC1BUF4;  // AN6
+   IRSens[0] = ADC1BUF5;  // AN9   Left Back
+   IRSens[1] = ADC1BUF6;  // AN10  Left Fwd
+   IRSens[2] = ADC1BUF7;  // AN11  Right Back
+   IRSens[3] = ADC1BUF8;  // AN12  Right Fwd
+   
 //   ANADC = ADC1BUF5;
 //   Buffer value ranges from  0-1023
 //   31 per 100 mV

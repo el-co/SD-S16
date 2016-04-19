@@ -39,13 +39,14 @@ typedef signed int sint32;
 #define RIGHT_TURN_RVS          705
 #define LEFT_TURN_RVS           705
 #define FULL_TURN_RVS           1415
-#define SCAN_RVS                175
+#define SCAN_RVS                20
 
 #define RIGHT_TURN_FWD          705
 #define LEFT_TURN_FWD           705
 #define FULL_TURN_FWD           1415
-#define SCAN_FWD                175
+#define SCAN_FWD                20
 
+#define CENTER_FLAME     3
 
 //****************************************************************************
 //
@@ -65,6 +66,7 @@ void TimerInit(void);
 void PWMInit(void);
 void ADCInit(void);
 void ICInit(void);
+void MapInit(void);
 
 //****************************************************************************
 //
@@ -77,9 +79,9 @@ uint16 PI( uint16 ActualEncoder, uint16 TargetEncoder, uint8 Motor );
 void SetSpeed( uint32 Speed);
 void SetDirection( uint32 Direction);
 uint8 CheckFlameDetectors();
-uint8 CenterFlame();
+uint32 CenterFlame();
 void CheckMap();
-void CheckCollisionSensors();
+uint32 CheckCollisionSensors();
 uint8 ReRoute();
 void ShootWater();
 uint8 FireVerify();
@@ -149,6 +151,14 @@ enum VEIRFY_FIRE_TEMP
     VRFY_FIRE_EXT = 1
 };
 
+enum COLLISION_TYPE
+{
+    NO_COLLISION,
+    LEFT_COLLISION,
+    RIGHT_COLLISION,
+    BOTH_COLLISION
+};
+
 //****************************************************************************
 //
 //                              Global Variables
@@ -157,17 +167,15 @@ enum VEIRFY_FIRE_TEMP
 uint8 Map[84][30];
 uint8 State;
 
-uint16 AN0ADC;
-uint16 AN1ADC;
-uint16 AN4ADC;
-uint16 AN5ADC;
-uint16 AN6ADC;
-uint16 AN9ADC;
-uint16 AN10ADC;
-uint16 AN11ADC;
-uint16 AN12ADC;
-uint16 ANADC;
+uint16 FlameSens[5];
+uint16 IRSens[4];
 uint8 SensorEvalFlag;
+uint32 CntrFlame;
+uint32 NextDir;
+uint32 NextSpeed;
+uint32 Rev;
+uint32 ScanTotal;
+uint32 MotorDir;
 
 uint32 M1PosEdgeCnt;
 uint32 M2PosEdgeCnt;
@@ -193,6 +201,13 @@ float M1Integral;
 float M2Integral;
 
 uint8 Extinguish;
+
+uint32 MapDistance[60];
+uint8 MapDirection[60];
+uint8 FollowingMap;
+uint16 MapIndex;
+uint32 MapDist;
+
 
 // DEBUG
 uint32 TEST4;
@@ -275,4 +290,33 @@ float SensDiff;
 
 float Sens[100];
 uint32 in;
+
+uint16 Rsens[100];
+uint16 Rsens2[100];
+sint16 dif[100];
+
+
+uint16 Rs[102];
+uint16 Rs2[102];
+
+uint32 avg;
+uint32 avg2;
+sint16 maxPos;
+sint16 maxNeg;
+sint16 minPos;
+sint16 minNeg;
+uint32 xin;
+float L1;
+uint16 c1;
+uint16 c2;
+float L2;
+uint32 ii;
+
+
+uint16 FlameSensData[500];
+uint16 FlameDataMin;
+uint16 FlameDataMax;
+uint32 FlameSensIdx;
+uint32 FlameSensCnt;
+        
 #endif	/* HAVVOCC_H */

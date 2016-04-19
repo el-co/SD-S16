@@ -40,6 +40,8 @@ void Init(void)
     M2Distance = 0;
     
     Extinguish = 0;
+    FollowingMap = 1;
+    MapIndex = 0;
 }
 
 //****************************************************************************
@@ -55,11 +57,11 @@ void Init(void)
 void GPIOInit(void)
 {
     // LED Pins
-    TRISAbits.TRISA7 = 0;       // RA7 Output   
-    TRISAbits.TRISA9 = 0;       // RA9 Output   
-    TRISAbits.TRISA10 = 0;      // RA10 Output   
-    TRISCbits.TRISC7 = 0;       // RC7 Output   
-    TRISCbits.TRISC8 = 0;       // RC8 Output   
+    TRISAbits.TRISA7 = 0;       // RA7 Output   // 
+    TRISAbits.TRISA9 = 0;       // RA9 Output   // 
+    TRISAbits.TRISA10 = 0;      // RA10 Output  // 
+    TRISCbits.TRISC7 = 0;       // RC7 Output   // Motor Dist
+    TRISCbits.TRISC8 = 0;       // RC8 Output   // 
 
     // ADC Pins
     // Flame Sensors
@@ -199,14 +201,14 @@ void ADCInit(void)
 {
     AD1CON1 = 0x0000;           // AD1 Enable  
     //0x00E0 1110 0000
-    AD1CON1bits.SSRC = 0b010;   // Auto Convert
+    AD1CON1bits.SSRC = 0b111;   // Auto Convert
     AD1CON1bits.CLRASAM = 1;    // Stop conversions when the first ADC interrupt is generated
                                 // Will also clear ASAM bit  
     AD1CON2bits.CSCNA = 1;      // Scan Inputs
     AD1CON2bits.SMPI = 8;       // Interrupts at the completion of conversion for each 9th sample/convert sequence
     
-//    AD1CON3bits.SAMC = 31;      // Auto-Sample Time bits - 31 TAD
-//    AD1CON3bits.ADCS = 1;       // ADC Conversion Clock Select bits - TPB * 2 * (ADCS + 1) = TAD
+    AD1CON3bits.SAMC = 26;      // Auto-Sample Time bits - 31 TAD
+    AD1CON3bits.ADCS = 4;       // ADC Conversion Clock Select bits - TPB * 2 * (ADCS + 1) = TAD
     
     AD1CHS  = 0;                // AD1 INPUT SELECT REGISTER
                                 // Not needed for auto-sampling
@@ -291,6 +293,141 @@ void ICInit(void)
     IC1CONbits.ON = 1;          // IC1 Enable    
     IC3CONbits.ON = 1;          // IC3 Enable
     IC4CONbits.ON = 1;          // IC4 Enable    
+}
+
+void MapInit()
+{
+    MapDistance[0] = 7;
+    MapDirection[0] = FORWARD;    
+    MapDistance[1] = 0;
+    MapDirection[1] = RIGHT_90/2;  // 45 degree angle ish  
+    MapDistance[2] = 4;
+    MapDirection[2] = FORWARD;     
+    MapDistance[3] = 0;
+    MapDirection[3] = LEFT_90/2;  // 45 degree angle ish     
+    MapDistance[4] = 3;
+    MapDirection[4] = FORWARD;  // Room 1 Door
+    MapDistance[5] = 0;
+    MapDirection[5] = LEFT_90; 
+    MapDistance[6] = 5;
+    MapDirection[6] = FORWARD;     
+    MapDistance[7] = 0;
+    MapDirection[7] = OFF;         
+    
+    /*
+    MapDistance[0] = 350;
+    MapDirection[0] = FORWARD;    
+    MapDistance[1] = 0;
+    MapDirection[1] = RIGHT_90/2;  // 45 degree angle ish  
+    MapDistance[2] = 180;
+    MapDirection[2] = FORWARD;     
+    MapDistance[3] = 0;
+    MapDirection[3] = LEFT_90/2;  // 45 degree angle ish     
+    MapDistance[4] = 140;
+    MapDirection[4] = FORWARD;  // Room 1 Door
+    MapDistance[5] = 0;
+    MapDirection[5] = LEFT_90; 
+    MapDistance[6] = 240;
+    MapDirection[6] = FORWARD; 
+    MapDistance[7] = 0;
+    MapDirection[7] = RIGHT_90; 
+    MapDistance[8] = 80;
+    MapDirection[8] = FORWARD; 
+    MapDistance[9] = 0;
+    MapDirection[9] = LEFT_90;     
+    MapDistance[10] = 480;
+    MapDirection[10] = FORWARD;  
+    MapDistance[11] = 0;
+    MapDirection[11] = RIGHT_90; 
+    MapDistance[12] = 400;
+    MapDirection[12] = FORWARD;  
+    MapDistance[13] = 0;
+    MapDirection[13] = RIGHT_90;     
+    MapDistance[14] = 480;
+    MapDirection[14] = RIGHT_90; 
+    MapDistance[15] = 440;
+    MapDirection[15] = FORWARD; 
+    MapDistance[16] = 0;
+    MapDirection[16] = LEFT_90;      
+    MapDistance[17] = 240;
+    MapDirection[17] = FORWARD; // Room 1 Exit    
+    MapDistance[18] = 0;
+    MapDirection[18] = LEFT_90;  
+    MapDistance[19] = 630;
+    MapDirection[19] = FORWARD; // Room 2 Door    
+    MapDistance[20] = 0;
+    MapDirection[20] = LEFT_90; 
+    MapDistance[21] = 240;
+    MapDirection[21] = FORWARD; 
+    MapDistance[22] = 0;
+    MapDirection[22] = RIGHT_90; 
+    MapDistance[23] = 80;
+    MapDirection[23] = FORWARD; 
+    MapDistance[24] = 0;
+    MapDirection[24] = LEFT_90;     
+    MapDistance[25] = 480;
+    MapDirection[25] = FORWARD;  
+    MapDistance[26] = 0;
+    MapDirection[26] = RIGHT_90; 
+    MapDistance[27] = 400;
+    MapDirection[27] = FORWARD;  
+    MapDistance[28] = 0;
+    MapDirection[28] = RIGHT_90;     
+    MapDistance[29] = 480;
+    MapDirection[29] = RIGHT_90; 
+    MapDistance[30] = 440;
+    MapDirection[30] = FORWARD; 
+    MapDistance[31] = 0;
+    MapDirection[31] = LEFT_90;      
+    MapDistance[32] = 240;
+    MapDirection[32] = FORWARD; // Room 2 Exit     
+    MapDistance[33] = 0;
+    MapDirection[33] = LEFT_90;  
+    MapDistance[34] = 660;
+    MapDirection[34] = FORWARD; // Room 3 Door     
+    MapDistance[35] = 0;
+    MapDirection[35] = LEFT_90; 
+    MapDistance[36] = 240;
+    MapDirection[36] = FORWARD; 
+    MapDistance[37] = 0;
+    MapDirection[37] = RIGHT_90; 
+    MapDistance[38] = 80;
+    MapDirection[37] = FORWARD; 
+    MapDistance[39] = 0;
+    MapDirection[39] = LEFT_90;     
+    MapDistance[40] = 480;
+    MapDirection[40] = FORWARD;  
+    MapDistance[41] = 0;
+    MapDirection[41] = RIGHT_90; 
+    MapDistance[42] = 400;
+    MapDirection[42] = FORWARD;  
+    MapDistance[43] = 0;
+    MapDirection[43] = RIGHT_90;     
+    MapDistance[44] = 480;
+    MapDirection[44] = RIGHT_90; 
+    MapDistance[45] = 440;
+    MapDirection[45] = FORWARD; 
+    MapDistance[46] = 0;
+    MapDirection[46] = LEFT_90;      
+    MapDistance[47] = 240;
+    MapDirection[47] = FORWARD; // Room 3 Exit         
+    MapDistance[48] = 0;
+    MapDirection[48] = LEFT_90;  
+    MapDistance[49] = 500;
+    MapDirection[49] = FORWARD;    
+    MapDistance[50] = 0;
+    MapDirection[50] = TURN_180; 
+    MapDistance[51] = 1960;
+    MapDirection[51] = FORWARD;       
+    MapDistance[52] = 0;
+    MapDirection[52] = RIGHT_90/2;  // 45 degree angle ish  
+    MapDistance[53] = 180;
+    MapDirection[53] = FORWARD;     
+    MapDistance[54] = 0;
+    MapDirection[54] = LEFT_90/2;  // 45 degree angle ish      
+    MapDistance[55] = 350;
+    MapDirection[55] = FORWARD;   
+    */
 }
 
 //****************************************************************************
@@ -514,10 +651,12 @@ void SetDirection( uint32 Direction)
     switch(Direction)
     {
         case(FORWARD):
+                MotorDir = FORWARD;
                 MotorDirectionCtrl( FWD, FWD );                
                 TurnFlag = 0;
             break;
         case(REVERSE):
+                MotorDir = REVERSE;
                 MotorDirectionCtrl( RVS, RVS );   
                 TurnFlag = 0;                
             break;  
@@ -602,100 +741,95 @@ void SetDirection( uint32 Direction)
 uint8 CheckFlameDetectors() 
 {    
     uint8 FlameDetected = 0;
-  
-/*   
-    i = AN10ADC; // INPUT BUFFER scaled to a 5V input
+    uint32 i; 
+ 
+    FlameSens[0] = 0;
+    FlameSens[1] = 0;                
+    FlameSens[2] = 0;    
     
-//    analog value 409 aprox 6 inch
-    if (i<= 417 && i>=967)
+    for (i = 1; i < 5; i++)
     {
-        //go slow 
-        SetSpeed(SUPER_SLOW);
-        MotorSpeedCtrl( Motor1Speed, Motor2Speed );//stop
-    
-   }
-    // analog value 942 aprox 3 inch
-    else if (i<967 && i>100)
-    {
-        SetSpeed(OFF);
-        MotorSpeedCtrl( Motor1Speed, Motor2Speed );//stop
-    
+         
+        if (FlameSens[i] > 15)
+        {
+            FlameDetected = 1;
+        }     
+        
     }
-*/
-    
+  
     return FlameDetected;
 } 
 
-uint8 CenterFlame()
+uint32 CenterFlame()
 {
-   uint8 FlameCentered = 0;
+   uint32 ActualCenter = 0;
+   uint32 i; 
+  
+    FlameSens[0] = 0;
+    FlameSens[1] = 0;                
+    FlameSens[2] = 0;   
+   
+    for (i = 1; i < 5; i++)
+    {          
+        if (FlameSens[i] > FlameSens[i-1])
+        {
+            ActualCenter = i;
+        }            
+    }
 
-//    uint8 flameDetected = 0;
-//    i = 1 ; // INPUT BUFFER scaled to a 5V input
-//    ADCBUFF[0]= AN10ADC;
-//    ADCBUFF[1]= AN5ADC;
-//    
-//    if ( ADCBUFF[0] > 20 )
-//    {
-//        flameDetected = 1;
-//    }
-//    if ( ADCBUFF[1] > 20 )
-//    {
-//        flameDetected = 1;
-//    }
-//       if (cnt == 40)
-//        {
-//    if (flameDetected != 0)
-//    {
-//            LATAbits.LATA0 = 1;  
-//                    
-//                if (ADCBUFF[i] > ADCBUFF[i-1])
-//                {
-//                    RealFlame = i;
-//                }
-//                else /////////////////////////////
-//                {
-//                    RealFlame = 0;
-//                }
-//            if (RealFlame != 0)// center sensor
-//            {
-//                KeepAdjust = 0;
-//                // keep adjust will turn robot
-//            }
-//            else 
-//            {
-//                KeepAdjust  = 1;
-//                // stop and put out flame
-//            }
-//    }   
-//            
-//            cnt = 0;
-//       }
-//        
-//        ADC10[cnt] = AN10ADC;
-//        ADC5[cnt] = AN5ADC;
-//        cnt ++;
-//        
-//        if (cnt > 40)
-//        {
-//            cnt = 0;
-//        }
-    
-   return FlameCentered;
+   return ActualCenter;
 }
 
 void CheckMap()
 {
-    
+    if ( MapDist == MapDistance[MapIndex] && TurnFlag == 0 )
+    {
+        MapDist = 0;
+        M1Distance = 0;
+        M2Distance = 0;   
+        
+        MapIndex++;
+        if ( MapDirection[MapIndex] != FORWARD ||  MapDirection[MapIndex] != REVERSE || MapDirection[MapIndex] != OFF )
+        {
+            SetDirection( MapDirection[MapIndex] );
+            NextDir = MapDirection[MapIndex+1];  
+            NextSpeed = SLOW;              
+        }
+        else 
+        {
+            SetDirection( MapDirection[MapIndex] );
+        }
+    }
+
 }
 
 void CheckFrontSensor()
 {
+    uint32 TurnDir; 
     Sens[in] = SensDiff * 0.0108844;
        
+//    if ( SensDiff < 750 )
+//    {
+//        if ( Rev == 0)
+//        { 
+//            SetDirection( REVERSE ); 
+//        }
+////        NextDir = FORWARD;
+////        NextSpeed = SLOW;
+//        Rev = 1;
+//    }
+//    else 
     if (SensDiff < 1063 && TurnFlag == 0)
     {
-       SetDirection( RIGHT_90 );      
+       Rev = 0;
+       TurnDir = CheckCollisionSensors();
+       if ( TurnDir == NO_COLLISION )
+       {
+           TurnDir = LEFT_90;
+       }
+       SetDirection( TurnDir ); 
+       NextDir = FORWARD;
+       NextSpeed = SLOW;
     }     
        
     in++;
@@ -705,15 +839,29 @@ void CheckFrontSensor()
     }   
 }
 
-void CheckCollisionSensors()
+uint32 CheckCollisionSensors()
 {
-    if (USSensorFlag != 0)
+    uint32 Collision;
+    Collision = NO_COLLISION;
+    
+    if ( (IRSens[0] > 750) || (IRSens[1] > 750) ) // Left Sensors
     {
-  
+//        Collision = NO_COLLISION;        
+        Collision = RIGHT_90;
     }
-    
-    
-    
+    if ( (IRSens[2] > 750) && (IRSens[3] > 750) ) // Right Sensors
+    {
+        if (Collision == RIGHT_90)
+        {
+            Collision = TURN_180;
+        }
+        else
+        {
+            Collision = LEFT_90;
+        }
+    }   
+     
+    return Collision;
 }
 uint8 ReRoute()
 {
@@ -726,12 +874,46 @@ void ShootWater()
     
 }
 
-uint8 FireVerify()
+uint8 FireVerifyTemp()
 {
     uint8 fireDetected = 0;
+    float temp = 0;
     
+//    I2C1Start();  
+//    I2C1Send((MLX90614_I2CADDR<<1) & 0xFE);             
+//    I2C1Send(MLX90614_TOBJ & 0xFF);             
+//    I2C1Restart();      
+//    I2C1Send((MLX90614_I2CADDR<<1) | 0x01);    
+//    temp = readTemp();  
+////        a++;                   
+//    I2C1Stop();     
    
-    
+    if (temp > 79)
+    {
+        fireDetected = 1;
+    }
     
     return fireDetected;
+}
+
+uint8 FireVerifySens()
+{
+    uint8 fireDetected = 1;
+    uint32 DataIdx;
+    uint32 DataDif;
+    uint32 TempDataDif;
+    
+    DataDif = FlameDataMax - FlameDataMin;
+    
+    for (DataIdx = 1; DataIdx < 500; DataIdx++)
+    {
+        TempDataDif = FlameSensData[DataIdx-1]-FlameSensData[DataIdx];
+        if ( TempDataDif > 30 )
+        {
+            fireDetected = 0;
+        }
+        
+    }
+    
+    return fireDetected;    
 }
