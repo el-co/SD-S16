@@ -68,6 +68,37 @@ void main(void)
     L2 = 0;
     c1 = 0;
     c2 = 0;
+    StartUp =0;
+    flcnt = 0;
+    xin2 = 0;
+    IRSamp = 0;
+    OneSec = 0;
+    SmplCnt = 0;
+    
+    RBCnt = 0;
+    RBTemp = 0;
+    RBSamp = 0;    
+    RFCnt = 0;
+    RFTemp = 0;
+    RFSamp = 0;     
+    ThreshCnt = 0;
+    mmaxB = 0;
+    mminB = 0;        
+    mmaxF = 0;
+    mminF = 0;    
+
+    IRCnt = 0;
+    RBCnt = 0;
+    RBSamp = 0;
+    RBChng = 0;
+    RBState = STEADY;
+    RFCnt = 0;
+    RFSamp = 0;
+    RFChng = 0;  
+    RFState = STEADY;
+    throwaway = 0;
+    IRSmpCnt = 0;
+    l = 0;    
 //    sD = 0;
     while(1)
     { 
@@ -86,9 +117,13 @@ void main(void)
                 CatchUp = 0;
                 MapIndex = 0;
                 MapDist = 0;
-                SetSpeed( OFF );  
+                
+                        
+                SetSpeed( SLOW );  
                 SetDirection( FORWARD );                
+
                 State = NAVIGATE; 
+                
                 break;
             case NAVIGATE:
                 // 	Use map to navigate
@@ -107,88 +142,62 @@ void main(void)
                     AdjustSpeedFlag = 0;
                 }
               
-//                if (USSensorFlag != 0)
-//                {
-//                    CheckFrontSensor();
-//                    NextDir = FORWARD;
-//                    NextSpeed = SLOW;
-//                    USSensorFlag = 0;
-//                }
+                if (USSensorFlag != 0)
+                {
+                    CheckFrontSensor();
+                    NextDir = FORWARD;
+                    NextSpeed = SLOW;
+                    USSensorFlag = 0;
+                }
                 
                 // 	Collision avoidance (ADC)   
                 // 	Check IR photo sensors (ADC)                        
                 if ( SensorEvalFlag != 0 )
-                {
-                    /*
-                    Rsens[xin] = IRSens[2];
-                    Rsens2[xin] = IRSens[3];
+                {              
+//                    IRCnt++;
+//                    if (IRCnt%5 == 0)
+//                    {
+////                    Rs[((xin2+1)/5)-1] = IRSens[2];
+//                    Rs[xin] = IRSens[2];                        
+//                    Rs2[xin] = IRSens[3];                    
+//                    
+//
+//                    if ( CheckWalls() != 0 )
+//                    { 
+//                        WS[xin] = WallState;                    
+//                        WSC[xin] = WallStCnt;                        
+//                    }
+//                                   
+//                    xin++;
+//                    
+//                    if (xin == 400)
+//                    {  
+//                        xin = 0;
+//                        l++;
+//                    }   
+//                    if (l >= 10)
+//                    {
+//                        l = 0;
+//                    }
+//                    IRCnt = 0;          
+//                    }
                     
-                    Rs[(Rsens[xin]+5)/10]++;
-                    Rs2[(Rsens2[xin]+5)/10]++;
-                                        
-                    dif[xin] = Rsens[xin] - Rsens2[xin];
-                    
-                    if ( dif[xin] >= 0 )
-                    {
-                        maxPos = ( dif[xin] > maxPos )? dif[xin]: maxPos;
-                        minPos = ( dif[xin] < minPos )? dif[xin]: minPos;      
-                    }
-                    else 
-                    {
-                        maxNeg = (dif[xin] < maxNeg)? dif[xin]: maxNeg; 
-                        minNeg = (dif[xin] > minNeg)? dif[xin]: minNeg;                          
-                    }
-                    xin++;
-                 
-                    if (xin == 20)
-                    {                         
-                        for ( ii = 0; ii<102; ii++)
-                        {                        
-                            if (Rs[ii] >= c1)
-                            {
-                                L1 = ii;
-                                c1 = Rs[ii];
-                            }
-                            if (Rs2[ii] >= c2)
-                            {
-                                L2 = ii;
-                                c2 = Rs2[ii];
-                            }                            
-                        }
-                        if (L1-L2 > 2)
-                        {
-                            xin = 0;                            
-                        }
-                        if (L2-L1 > 2)
-                        {
-                            xin = 0;                            
-                        }                        
-                        xin = 0;
-                        for ( ii = 0; ii<102; ii++)
-                        {
-                            Rs[ii] = 0;
-                            Rs2[ii] = 0;
-                        } 
-                        c1 = 0;
-                        c2 = 0;
-                        L1 = 0;
-                        L2 = 0;
-                        maxPos = 0;
-                        minPos = 0;
-                        maxNeg = 0;
-                        minNeg = 0;                                             
-                    }
-                    */
-//                    CheckCollisionSensors();    
+                    CheckCollisionSensors();    
+
+                    /////// COMMENT OUT IF FIRE SENSORS NOT CONNECTED
+//                    if ( CheckFlameDetectors() != 0 )  
+//                    {
+//                        SetSpeed( OFF );      
+//                        ScanTotal = 0;    
+//                        LATAbits.LATA10 = 1;
+//                        ScLeft = 0;
+//                        ScRight = 0;
+//                        State = FIRE_DETECTED;
+////                        State = FIRE_VERIFY;
+//                    }
+                   /////////////////////////////////////////////////// 
                     
                     
-                    if ( CheckFlameDetectors() != 0 )  
-                    {
-                        SetSpeed( OFF );      
-                        ScanTotal = 0;    
-                        LATAbits.LATA10 = 1;
-                        State = FIRE_DETECTED;
-                    }
                     SensorEvalFlag = 0;
                 }                
 
@@ -199,18 +208,22 @@ void main(void)
 //                ReRoute();
                 // Use IR photo sensors (ADC) to center flame source
                 if ( SensorEvalFlag != 0 )
-                {
+                {                                   
                     // Cnter flame and get closer
                     CntrFlame = CenterFlame();
                     if ( CntrFlame != CENTER_FLAME )
                     {
-                        if (CntrFlame == 2 || CntrFlame == 4) // Left Sensors
+                        if ((CntrFlame == 3 || CntrFlame == 4) && ScLeft == 0) // Left Sensors
                         {
-                            SetDirection( LEFT_SCAN ); 
+                            ScLeft = 1;
+                            ScRight = 0;                            
+                            SetDirection( LEFT_SCAN );                           
                             ScanTotal ++; 
                         }
-                        else if (CntrFlame == 0 || CntrFlame == 1) // Right Sensors
+                        else if ((CntrFlame == 0 || CntrFlame == 1) && ScRight == 0) // Right Sensors
                         {
+                            ScLeft = 0;                            
+                            ScRight = 1;
                             SetDirection( RIGHT_SCAN );  
                             ScanTotal --;                             
                         }  
@@ -224,35 +237,38 @@ void main(void)
                         SetDirection( STALL_M2 );
                         SetSpeed(OFF);
                         TurnFlag = 0;
+                        ScLeft = 0;
+                        ScRight = 0;
+                        LATCbits.LATC8 = 0;                         
                         LATAbits.LATA9 = 1;
 //                        I2C1Init(145); 
                         FlameSensIdx = 0;
                         FlameDataMin = 0;
                         FlameDataMax = 0;
-                        State = FIRE_VERIFY;
+//                        State = FIRE_VERIFY;
                    
                     }
                     
-                    
+                    SensorEvalFlag = 0;
                 }
                 break;
             case FIRE_VERIFY:
                 // use temp sensors to verify flame
-                if (FireVerifyTemp() != 0)
-                {
-                    Extinguish = 1;
-                    State = FIRE_EXTINGUISH;   
-                }
-                else 
-                {
-                    State = NAVIGATE;                      
-                }
+//                if (FireVerifyTemp() != 0)
+//                {
+//                    Extinguish = 1;
+//                    State = FIRE_EXTINGUISH;   
+//                }
+//                else 
+//                {
+//                    State = NAVIGATE;                      
+//                }
                 
                 if ( SensorEvalFlag != 0 )
                 {
                     if (FlameSensCnt%100 == 0)
                     {
-                        FlameSensIdx = FlameSensCnt%100;
+                        FlameSensIdx = FlameSensCnt/100;
                         FlameSensData[FlameSensIdx] = FlameSens[CENTER_FLAME];
                         
                         if ( FlameSensData[FlameSensIdx] < FlameDataMin )
@@ -274,12 +290,12 @@ void main(void)
                             }
                             else 
                             {
-                                FlameSensIdx = 0
+                                FlameSensIdx = 0;
                                 FlameSensCnt = -1;        
                                 State = NAVIGATE;                      
                             }        
                             
-                            FlameSensIdx = 0
+                            FlameSensIdx = 0;
                             FlameSensCnt = -1;                              
                         }
                     }  
@@ -304,7 +320,7 @@ void main(void)
                     // 100ms pulse to solenoid
                     ShootWater();
                     
-                    if ( FireVerify() == 0 )
+                    if ( FireVerifyTemp() == 0 )
                     {
                         Extinguish = 0;
                     }
@@ -339,13 +355,20 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
 {
     IFS0bits.T2IF = 0;      // Turn Flag Off
 
+    
+//    if (OneSec++ >=16000)
+//    {
+//        OneSec = 0;
+//        SmplCnt = 0;
+//    }
+    
     // Motors
     // 25 1cm
     // 40 1.5cm
     // 400 10cm
     
     
-    if  ( (State == NAVIGATE) && TurnFlag == 1) 
+    if  ( (State == NAVIGATE || State == FIRE_DETECTED ) && TurnFlag == 1) 
     {
         if (FwdTurnCheck == MOTOR_1)
         {
@@ -410,6 +433,8 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
         {
             SetDirection( NextDir );
             SetSpeed( NextSpeed );
+            ScLeft = 0;
+            ScRight = 0;             
             M1Distance = 0;
             M2Distance = 0;   
             distanceDiff = 0;            
@@ -568,6 +593,7 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
                 }
                 else 
                 {
+                    EncEq = 0;
                     Motor2Speed = PI(M2PosEdgeCnt, TargetEncoder+1, MOTOR_2);
                     Motor1Speed = PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);      
                 }
@@ -623,7 +649,7 @@ void __ISR (23, IPL3SOFT) ADCIntHandler(void)
 //   3.3V     1023       
    
    SensorEvalFlag = 1;
-   
+//   SmplCnt++;
    
    AD1CON1bits.DONE = 0;  
    IFS0bits.AD1IF = 0;      // Turn Flag Off 

@@ -46,7 +46,7 @@ typedef signed int sint32;
 #define FULL_TURN_FWD           1415
 #define SCAN_FWD                20
 
-#define CENTER_FLAME     3
+#define CENTER_FLAME     2
 
 //****************************************************************************
 //
@@ -84,8 +84,11 @@ void CheckMap();
 uint32 CheckCollisionSensors();
 uint8 ReRoute();
 void ShootWater();
-uint8 FireVerify();
+uint8 FireVerifyTemp();
+uint8 FireVerifySens();
 void CheckFrontSensor();
+uint8 CheckWalls();
+
 //****************************************************************************
 // 
 //                              enum Variables
@@ -157,6 +160,22 @@ enum COLLISION_TYPE
     LEFT_COLLISION,
     RIGHT_COLLISION,
     BOTH_COLLISION
+};
+
+enum IR_DETECT
+{
+    STEADY,
+    INC,
+    DEC
+};
+
+enum WALL_DETECT
+{
+    AWAY,       //0
+    CLSR,       //1
+    ALGN_AWAY,  //2
+    ALGN_CLSR,  //3
+    ALGN        //4
 };
 
 //****************************************************************************
@@ -291,13 +310,13 @@ float SensDiff;
 float Sens[100];
 uint32 in;
 
-uint16 Rsens[100];
-uint16 Rsens2[100];
-sint16 dif[100];
+uint16 Rsens[400];
+uint16 Rsens2[400];
+sint16 dif[400];
 
 
-uint16 Rs[102];
-uint16 Rs2[102];
+uint16 Rs[400];
+uint16 Rs2[400];
 
 uint32 avg;
 uint32 avg2;
@@ -313,10 +332,67 @@ float L2;
 uint32 ii;
 
 
+
+uint16 FlL[200];
+uint16 FlR[200];
+uint16 FlM[200];
+uint32 flcnt;
+
 uint16 FlameSensData[500];
 uint16 FlameDataMin;
 uint16 FlameDataMax;
 uint32 FlameSensIdx;
 uint32 FlameSensCnt;
-        
+uint8 ScLeft;
+uint8 ScRight;
+uint32 StartUp;
+
+uint32 OneSec;
+uint32 SmplCnt;
+uint32 IRSamp;
+
+uint32 difCnt;
+uint32 difIRTemp;
+uint32 difIRSamp;
+uint32 xin2;
+
+uint32 RBCnt;
+uint32 RBTemp;
+uint32 RBSamp;
+uint32 RFCnt;
+uint32 RFTemp;
+uint32 RFSamp;
+
+sint32 RThresh;
+sint32 LThresh;
+uint16 ThreshCnt;
+uint8 clsr[400];
+uint8 cls;
+uint8 EncEq;
+
+uint16 mmaxB;
+uint16 mminB;
+uint16 mmaxF;
+uint16 mminF;
+
+uint16 loops;
+
+uint8 IRCnt;
+//uint32 RBCnt;
+uint32 RBState;
+uint32 RBSamp;
+sint32 RBChng;
+//uint32 RFCnt;
+uint32 RFState;
+uint32 RBSamp;
+sint32 RFChng;
+uint32 WallState;
+uint32 WallStCnt;
+uint32 WS[400];
+uint32 WSC[400];
+uint16 RBSmp[5];
+uint16 RFSmp[5];
+uint16 IRSmpCnt;
+uint32 throwaway;
+uint32 l;
 #endif	/* HAVVOCC_H */

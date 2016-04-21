@@ -743,14 +743,14 @@ uint8 CheckFlameDetectors()
     uint8 FlameDetected = 0;
     uint32 i; 
  
-    FlameSens[0] = 0;
-    FlameSens[1] = 0;                
-    FlameSens[2] = 0;    
+//    FlameSens[0] = 0;
+//    FlameSens[1] = 0;                
+//    FlameSens[2] = 0;    
     
     for (i = 1; i < 5; i++)
     {
          
-        if (FlameSens[i] > 15)
+        if (FlameSens[i] > 30)
         {
             FlameDetected = 1;
         }     
@@ -764,16 +764,27 @@ uint32 CenterFlame()
 {
    uint32 ActualCenter = 0;
    uint32 i; 
-  
-    FlameSens[0] = 0;
-    FlameSens[1] = 0;                
-    FlameSens[2] = 0;   
+   uint16 MaxHighest = 0;
+//    FlameSens[0] = 0;
+//    FlameSens[1] = 0;                
+//    FlameSens[2] = 0;   
    
-    for (i = 1; i < 5; i++)
+    for (i = 0; i < 5; i++)
     {          
-        if (FlameSens[i] > FlameSens[i-1])
+        if (MaxHighest < FlameSens[i])
         {
+            MaxHighest = FlameSens[i];
             ActualCenter = i;
+            
+//            if (ActualCenter == 4)
+//            {
+//                        SetDirection( STALL_M1 );
+//                        SetDirection( STALL_M2 );
+//                        SetSpeed(OFF); 
+//                    ActualCenter = 4;                
+//                                            
+//            }
+            
         }            
     }
 
@@ -823,10 +834,11 @@ void CheckFrontSensor()
     {
        Rev = 0;
        TurnDir = CheckCollisionSensors();
-       if ( TurnDir == NO_COLLISION )
-       {
-           TurnDir = LEFT_90;
-       }
+//       if ( TurnDir == NO_COLLISION )
+//       {
+//           TurnDir = LEFT_90;
+//       }
+       SetSpeed( SUPER_SLOW );
        SetDirection( TurnDir ); 
        NextDir = FORWARD;
        NextSpeed = SLOW;
@@ -916,4 +928,82 @@ uint8 FireVerifySens()
     }
     
     return fireDetected;    
+}
+
+uint8 CheckWalls()
+{
+    uint8 AdjustWall;
+    uint16 RBTemp;
+    uint16 RFTemp;
+     
+    RBTemp = IRSens[2];
+    RFTemp = IRSens[3];
+    
+    RBChng = RBSamp - RBTemp;        
+    RFChng = RFSamp - RFTemp;        
+    
+    if (RBChng > 15)
+    {
+        RBState = INC;         
+    }
+    else if (RBChng < -15)
+    {
+        RBState = DEC;        
+    }    
+    else
+    {
+        RBCnt=0;        
+        RBState = STEADY;            
+    }
+    
+    if (RFChng > 15)
+    {
+        RFState = INC;        
+    }
+    else if (RFChng < -15)
+    {
+        RFState = DEC;                
+    }    
+    else
+    {
+        RFState = STEADY;                
+    }    
+    
+    if ((RBState == INC) && (RFState == INC) && (RFChng > RBChng))
+    {
+        WallStCnt = (WallState != AWAY) ? 1: WallStCnt + 1;
+        WallState = AWAY;
+        AdjustWall = 1;        
+    }    
+    else if ((RBState == DEC) && (RFState == DEC) && (RFChng > RBChng))
+    {
+        WallStCnt = (WallState != CLSR) ? 1: WallStCnt + 1;        
+        WallState = CLSR;        
+        AdjustWall = 1;        
+    }
+    else if ((RBState == INC) && (RFState == INC) && (RFChng == RBChng))
+    {
+        WallStCnt = (WallState != ALGN_AWAY) ? 1: WallStCnt + 1;        
+        WallState = ALGN_AWAY;        
+        AdjustWall = 1;        
+    }
+    else if ((RBState == DEC) && (RFState == DEC) && (RFChng == RBChng))
+    {
+        WallStCnt = (WallState != ALGN_CLSR) ? 1: WallStCnt + 1;
+        WallState = ALGN_CLSR;                
+        AdjustWall = 1;        
+    }
+    else 
+    {
+        WallStCnt = (WallState != ALGN) ? 1: WallStCnt + 1;
+        WallState = ALGN;                        
+//        AdjustWall = 0;
+        AdjustWall = 1;
+       
+    }
+            
+    RBSamp = RBTemp;
+    RFSamp = RFTemp;
+    
+    return AdjustWall;
 }
