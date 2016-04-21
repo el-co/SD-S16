@@ -834,11 +834,11 @@ void CheckFrontSensor()
     {
        Rev = 0;
        TurnDir = CheckCollisionSensors();
-//       if ( TurnDir == NO_COLLISION )
-//       {
-//           TurnDir = LEFT_90;
-//       }
-       SetSpeed( SUPER_SLOW );
+       if ( TurnDir == NO_COLLISION )
+       {
+           TurnDir = LEFT_90;
+       }
+//       SetSpeed( SUPER_SLOW );
        SetDirection( TurnDir ); 
        NextDir = FORWARD;
        NextSpeed = SLOW;
@@ -865,7 +865,7 @@ uint32 CheckCollisionSensors()
     {
         if (Collision == RIGHT_90)
         {
-            Collision = TURN_180;
+            Collision = TURN_180; // or reverse
         }
         else
         {

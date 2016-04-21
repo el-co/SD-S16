@@ -505,7 +505,7 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
     maxDistDiff = ( maxDistDiff < distanceDiff )? distanceDiff: maxDistDiff;    
     maxDistDiffNeg = ( maxDistDiffNeg > distanceDiff )? distanceDiff: maxDistDiffNeg;    
 
-    if (M1Distance > 400 && M2Distance > 400)
+    if (M1Distance > 400 && M2Distance > 400 && TurnFlag == 0)
     {
         MapDist++;
         M1Distance = (distanceDiff > 0)? distanceDiff: 0;
