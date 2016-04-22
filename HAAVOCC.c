@@ -98,7 +98,12 @@ void main(void)
     RFState = STEADY;
     throwaway = 0;
     IRSmpCnt = 0;
-    l = 0;    
+    l = 0;   
+    incCnt = 0;
+  
+    RBThresh = 0;
+    RFThresh = 0;
+    ThrshCnt = 0;
 //    sD = 0;
     while(1)
     { 
@@ -118,12 +123,26 @@ void main(void)
                 MapIndex = 0;
                 MapDist = 0;
                 
-                        
-                SetSpeed( SLOW );  
-                SetDirection( FORWARD );                
-
-                State = NAVIGATE; 
+                if ( SensorEvalFlag != 0 )
+                {              
+                    IRCnt++;
+                    if (IRCnt%5 == 0)
+                    {
+                        ThrshCnt++;
+                        RBThresh += IRSens[2];
+                        RFThresh += IRSens[3];                        
+                    }
+                }
                 
+                SetSpeed( OFF );  
+                SetDirection( FORWARD );                
+                
+                if (ThrshCnt > 20)
+                {
+                    RBThresh = RBThresh/20;
+                    RFThresh = RFThresh/20;                   
+                    State = NAVIGATE; 
+                }
                 break;
             case NAVIGATE:
                 // 	Use map to navigate
@@ -142,13 +161,13 @@ void main(void)
                     AdjustSpeedFlag = 0;
                 }
               
-                if (USSensorFlag != 0)
-                {
-                    CheckFrontSensor();
-                    NextDir = FORWARD;
-                    NextSpeed = SLOW;
-                    USSensorFlag = 0;
-                }
+//                if (USSensorFlag != 0)
+//                {
+//                    CheckFrontSensor();
+//                    NextDir = FORWARD;
+//                    NextSpeed = SLOW;
+//                    USSensorFlag = 0;
+//                }
                 
                 // 	Collision avoidance (ADC)   
                 // 	Check IR photo sensors (ADC)                        
@@ -161,7 +180,9 @@ void main(void)
 //                    Rs[xin] = IRSens[2];                        
 //                    Rs2[xin] = IRSens[3];                    
 //                    
-//
+//                    Ls[xin] = IRSens[0];                        
+//                    Ls2[xin] = IRSens[1];                        
+//                    
 //                    if ( CheckWalls() != 0 )
 //                    { 
 //                        WS[xin] = WallState;                    
@@ -175,14 +196,14 @@ void main(void)
 //                        xin = 0;
 //                        l++;
 //                    }   
-//                    if (l >= 10)
-//                    {
-//                        l = 0;
-//                    }
+////                    if (l >= 10)
+////                    {
+////                        l = 0;
+////                    }
 //                    IRCnt = 0;          
 //                    }
                     
-                    CheckCollisionSensors();    
+//                    CheckCollisionSensors();    
 
                     /////// COMMENT OUT IF FIRE SENSORS NOT CONNECTED
 //                    if ( CheckFlameDetectors() != 0 )  

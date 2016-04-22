@@ -930,6 +930,114 @@ uint8 FireVerifySens()
     return fireDetected;    
 }
 
+//uint8 CheckWalls()
+//{
+//    uint8 AdjustWall;
+//    uint16 RBTemp;
+//    uint16 RFTemp;
+//     
+//    RBTemp = IRSens[2];
+//    RFTemp = IRSens[3];
+//    
+//    RBChng = RBSamp - RBTemp;        
+//    RFChng = RFSamp - RFTemp;        
+//    
+//    if (RBChng > 9)
+//    {
+//        RBState = INC;         
+//    }
+//    else if (RBChng < -9)
+//    {
+//        RBState = DEC;        
+//    }    
+//    else
+//    {
+//        RBCnt=0;        
+//        RBState = STEADY;            
+//    }
+//    
+//    if (RFChng > 9)
+//    {
+//        RFState = INC;        
+//    }
+//    else if (RFChng < -9)
+//    {
+//        RFState = DEC;                
+//    }    
+//    else
+//    {
+//        RFState = STEADY;                
+//    }    
+//    
+//    if ((RFState == INC) && (RFChng > RBChng))
+//    {
+//        if (WallState != AWAY)
+//        {
+//            lastSamp = RFSamp;
+//        }
+//
+//        WallStCnt = (WallState != AWAY) ? 1: WallStCnt + 1;
+//        WallState = AWAY;
+//        
+//        AdjustWall = 1;        
+//    }    
+//    else if ((RFState == DEC) && (RFChng > RBChng))
+//    {
+//        WallStCnt = (WallState != CLSR) ? 1: WallStCnt + 1;        
+//        WallState = CLSR;        
+//        AdjustWall = 1;        
+//    }
+//    else if ((RBState == INC) && (RFState == INC) && (RFChng == RBChng))
+//    {
+//        WallStCnt = (WallState != ALGN_AWAY) ? 1: WallStCnt + 1;        
+//        WallState = ALGN_AWAY;        
+//        AdjustWall = 1;        
+//    }
+//    else if ((RBState == DEC) && (RFState == DEC) && (RFChng == RBChng))
+//    {
+//        WallStCnt = (WallState != ALGN_CLSR) ? 1: WallStCnt + 1;
+//        WallState = ALGN_CLSR;                
+//        AdjustWall = 1;        
+//    }
+//    else 
+//    {
+//        if (WallState != ALGN)
+//        {
+//            RFChng = RFSamp - lastSamp;        
+//            if (RBChng > 9)
+//            {
+//                RBState = INC;         
+//            }
+//            else if (RBChng < -9)
+//            {
+//                RBState = DEC;        
+//            }    
+//            else
+//            {
+//                RBCnt=0;        
+//                RBState = STEADY;            
+//            }            
+//            
+//            
+//            
+//            
+//        }
+//        else
+//        {
+//            WallStCnt = (WallState != ALGN) ? 1: WallStCnt + 1;
+//            WallState = ALGN; 
+//        }
+////        AdjustWall = 0;
+//        AdjustWall = 1;
+//       
+//    }
+//            
+//    RBSamp = RBTemp;
+//    RFSamp = RFTemp;
+//    
+//    return AdjustWall;
+//}
+
 uint8 CheckWalls()
 {
     uint8 AdjustWall;
@@ -939,14 +1047,14 @@ uint8 CheckWalls()
     RBTemp = IRSens[2];
     RFTemp = IRSens[3];
     
-    RBChng = RBSamp - RBTemp;        
-    RFChng = RFSamp - RFTemp;        
+    RBChng = RBThresh - RBTemp;        
+    RFChng = RFThresh - RFTemp;        
     
-    if (RBChng > 15)
+    if (RBChng > 9)
     {
         RBState = INC;         
     }
-    else if (RBChng < -15)
+    else if (RBChng < -9)
     {
         RBState = DEC;        
     }    
@@ -956,11 +1064,11 @@ uint8 CheckWalls()
         RBState = STEADY;            
     }
     
-    if (RFChng > 15)
+    if (RFChng > 9)
     {
         RFState = INC;        
     }
-    else if (RFChng < -15)
+    else if (RFChng < -9)
     {
         RFState = DEC;                
     }    
@@ -969,13 +1077,19 @@ uint8 CheckWalls()
         RFState = STEADY;                
     }    
     
-    if ((RBState == INC) && (RFState == INC) && (RFChng > RBChng))
+    if ((RFState == INC) && (RFChng > RBChng))
     {
+        if (WallState != AWAY)
+        {
+            lastSamp = RFSamp;
+        }
+
         WallStCnt = (WallState != AWAY) ? 1: WallStCnt + 1;
         WallState = AWAY;
+        
         AdjustWall = 1;        
     }    
-    else if ((RBState == DEC) && (RFState == DEC) && (RFChng > RBChng))
+    else if ((RFState == DEC) && (RFChng > RBChng))
     {
         WallStCnt = (WallState != CLSR) ? 1: WallStCnt + 1;        
         WallState = CLSR;        
@@ -995,15 +1109,39 @@ uint8 CheckWalls()
     }
     else 
     {
-        WallStCnt = (WallState != ALGN) ? 1: WallStCnt + 1;
-        WallState = ALGN;                        
+        if (WallState != ALGN)
+        {
+            RFChng = RFSamp - lastSamp;        
+            if (RBChng > 9)
+            {
+                RBState = INC;         
+            }
+            else if (RBChng < -9)
+            {
+                RBState = DEC;        
+            }    
+            else
+            {
+                RBCnt=0;        
+                RBState = STEADY;            
+            }            
+            
+            
+            
+            
+        }
+        else
+        {
+            WallStCnt = (WallState != ALGN) ? 1: WallStCnt + 1;
+            WallState = ALGN; 
+        }
 //        AdjustWall = 0;
         AdjustWall = 1;
        
     }
             
-    RBSamp = RBTemp;
-    RFSamp = RFTemp;
-    
-    return AdjustWall;
+//    RBSamp = RBTemp;
+//    RFSamp = RFTemp;
+        
+    return AdjustWall;    
 }

@@ -318,6 +318,11 @@ sint16 dif[400];
 uint16 Rs[400];
 uint16 Rs2[400];
 
+
+uint16 Ls[400];
+uint16 Ls2[400];
+
+
 uint32 avg;
 uint32 avg2;
 sint16 maxPos;
@@ -395,4 +400,12 @@ uint16 RFSmp[5];
 uint16 IRSmpCnt;
 uint32 throwaway;
 uint32 l;
+
+uint32 incCnt;
+uint32 lastSamp;
+uint32 RBThresh;
+uint32 RFThresh;
+
+
+
 #endif	/* HAVVOCC_H */
