@@ -28,82 +28,42 @@ void main(void)
     M1Integral = 0;
     M2Integral = 0;
     
-    Hz = 0.02;
-    TM364PS = 625000;
-    Input = TM364PS * Hz;
     USSensorFlag = 0;
     Fixed = 0;
-    SensorCnt = 0;
-    Debug = 0;
     SpeedUp = 0;
-    TestAdjust = 0;    
-    distDifCnt = 0;
-    maxDistDiff = 0;  
-    aft1 = 0;
-    aft2 = 0;  
-    turnFixCnt1 = 0;
-    turnFixCnt2 = 0;    
-    LATCbits.LATC7 = 0;
+    maxDistDiff = 0;   
+    LATCbits.LATC7 = 1;
     
-    LATAbits.LATA7 = 0;
-    LATAbits.LATA9 = 0;
-    LATAbits.LATA10 = 0;
-    LATCbits.LATC8 = 0;
+    LATAbits.LATA7 = 1;     //
+    LATBbits.LATB9 = 0;     //
+    LATAbits.LATA10 = 0;    //
+    LATCbits.LATC8 = 0;     //
+    
+    //solenoid
+    LATCbits.LATC4 = 0;
      
-    encCnt = 0;
-    fl=0;
-    in = 0;
-    Rev = 0;
-    ScanTotal = 0;
+//    USInd = 0;
     xin = 0;
     
-    maxPos = 0;
-    minPos = 0;
-    maxNeg = 0;
-    minNeg = 0;
-    avg = 0;
-    avg2 = 0;
-    
-    L1 = 0;
-    L2 = 0;
-    c1 = 0;
-    c2 = 0;
-    StartUp =0;
     flcnt = 0;
-    xin2 = 0;
-    IRSamp = 0;
     OneSec = 0;
     SmplCnt = 0;
-    
-    RBCnt = 0;
-    RBTemp = 0;
-    RBSamp = 0;    
-    RFCnt = 0;
-    RFTemp = 0;
-    RFSamp = 0;     
-    ThreshCnt = 0;
-    mmaxB = 0;
-    mminB = 0;        
-    mmaxF = 0;
-    mminF = 0;    
-
+       
     IRCnt = 0;
-    RBCnt = 0;
-    RBSamp = 0;
     RBChng = 0;
     RBState = STEADY;
-    RFCnt = 0;
-    RFSamp = 0;
     RFChng = 0;  
     RFState = STEADY;
-    throwaway = 0;
-    IRSmpCnt = 0;
     l = 0;   
-    incCnt = 0;
   
     RBThresh = 0;
     RFThresh = 0;
     ThrshCnt = 0;
+    
+    flmMidMax = 0;
+    flmMidMin = 0;
+    flcn = 0;
+    UnMappedTurn = 0;
 //    sD = 0;
     while(1)
     { 
@@ -122,7 +82,7 @@ void main(void)
                 CatchUp = 0;
                 MapIndex = 0;
                 MapDist = 0;
-                
+                MapDone = 0;
                 if ( SensorEvalFlag != 0 )
                 {              
                     IRCnt++;
@@ -133,14 +93,16 @@ void main(void)
                         RFThresh += IRSens[3];                        
                     }
                 }
+                 
+                if (ThrshCnt >= 20)
+                {                
+                    SetSpeed( SLOW );  
+                    SetDirection( FORWARD );                
                 
-                SetSpeed( OFF );  
-                SetDirection( FORWARD );                
-                
-                if (ThrshCnt > 20)
-                {
+
                     RBThresh = RBThresh/20;
-                    RFThresh = RFThresh/20;                   
+                    RFThresh = RFThresh/20; 
+                    
                     State = NAVIGATE; 
                 }
                 break;
@@ -148,19 +110,20 @@ void main(void)
                 // 	Use map to navigate
                 State = NAVIGATE; 
 
-//                if (MapDirection[MapIndex] != OFF)
-//                {
-//                    CheckMap();
-//                }
-                //  Use pi code to adjust speed     
-                LATCbits.LATC8 = 1; 
-                
+                // uncomment to follow map
+                if (MapDone == 0)
+                {
+                    CheckMap();
+                }
+
+                //  Use pi code to adjust speed                  
                 if ( AdjustSpeedFlag != 0 )
                 {
                     MotorSpeedCtrl( Motor1Speed, Motor2Speed );                   
                     AdjustSpeedFlag = 0;
                 }
               
+                // front sensor
 //                if (USSensorFlag != 0)
 //                {
 //                    CheckFrontSensor();
@@ -173,52 +136,47 @@ void main(void)
                 // 	Check IR photo sensors (ADC)                        
                 if ( SensorEvalFlag != 0 )
                 {              
-//                    IRCnt++;
-//                    if (IRCnt%5 == 0)
-//                    {
-////                    Rs[((xin2+1)/5)-1] = IRSens[2];
-//                    Rs[xin] = IRSens[2];                        
-//                    Rs2[xin] = IRSens[3];                    
+                    IRCnt++;
+                    if (IRCnt%5 == 0)
+                    {   
+//                    RB_s[xin] = RBThresh - IRSens[2];                        
+//                    RF_s[xin] = RFThresh - IRSens[3];                    
 //                    
-//                    Ls[xin] = IRSens[0];                        
-//                    Ls2[xin] = IRSens[1];                        
+//                    LB_s[xin] = IRSens[0];                        
+//                    LF_s[xin] = IRSens[1];                        
 //                    
-//                    if ( CheckWalls() != 0 )
-//                    { 
-//                        WS[xin] = WallState;                    
-//                        WSC[xin] = WallStCnt;                        
-//                    }
-//                                   
-//                    xin++;
-//                    
-//                    if (xin == 400)
-//                    {  
-//                        xin = 0;
-//                        l++;
-//                    }   
+                    
+                    CheckWalls();                        
+                    RB_s[xin] = M2Wall;                        
+                    RF_s[xin] = M1Wall;                          
+                    xin++;
+                    
+                    if (xin == 1013)
+                    {  
+                        xin = 0;
+                        l++;
+                    }   
 ////                    if (l >= 10)
 ////                    {
 ////                        l = 0;
 ////                    }
-//                    IRCnt = 0;          
-//                    }
-                    
+                    IRCnt = 0;          
+                    }
+                   
+                    // check left sensors for walls 
 //                    CheckCollisionSensors();    
 
                     /////// COMMENT OUT IF FIRE SENSORS NOT CONNECTED
 //                    if ( CheckFlameDetectors() != 0 )  
 //                    {
 //                        SetSpeed( OFF );      
-//                        ScanTotal = 0;    
-//                        LATAbits.LATA10 = 1;
 //                        ScLeft = 0;
 //                        ScRight = 0;
 //                        State = FIRE_DETECTED;
 ////                        State = FIRE_VERIFY;
 //                    }
                    /////////////////////////////////////////////////// 
-                    
-                    
+                                   
                     SensorEvalFlag = 0;
                 }                
 
@@ -239,14 +197,12 @@ void main(void)
                             ScLeft = 1;
                             ScRight = 0;                            
                             SetDirection( LEFT_SCAN );                           
-                            ScanTotal ++; 
                         }
                         else if ((CntrFlame == 0 || CntrFlame == 1) && ScRight == 0) // Right Sensors
                         {
                             ScLeft = 0;                            
                             ScRight = 1;
                             SetDirection( RIGHT_SCAN );  
-                            ScanTotal --;                             
                         }  
                         SetSpeed( SUPER_SLOW );
                         NextDir = FORWARD;  
@@ -260,16 +216,23 @@ void main(void)
                         TurnFlag = 0;
                         ScLeft = 0;
                         ScRight = 0;
-                        LATCbits.LATC8 = 0;                         
-                        LATAbits.LATA9 = 1;
 //                        I2C1Init(145); 
-                        FlameSensIdx = 0;
-                        FlameDataMin = 0;
-                        FlameDataMax = 0;
+                        
+                        /*
+                         //needed for decoycheck
+                        flmMidMin = 32767;
+                        flmMidMax = -32768;
+                        PrvMidFlame = FlameSens[2];   
+                        IgnFirst = 1;                    
+
+                         */                        
+                        
 //                        State = FIRE_VERIFY;
                    
                     }
                     
+
+
                     SensorEvalFlag = 0;
                 }
                 break;
@@ -287,40 +250,20 @@ void main(void)
                 
                 if ( SensorEvalFlag != 0 )
                 {
-                    if (FlameSensCnt%100 == 0)
+                               
+                    if ( DecoyCheck() != 0)
                     {
-                        FlameSensIdx = FlameSensCnt/100;
-                        FlameSensData[FlameSensIdx] = FlameSens[CENTER_FLAME];
-                        
-                        if ( FlameSensData[FlameSensIdx] < FlameDataMin )
+                        if ( FireVerifySens() != 0)
                         {
-                            FlameDataMin = FlameSensData[FlameSensIdx];
+                            State = FIRE_EXTINGUISH;
                         }
-                        
-                        if ( FlameSensData[FlameSensIdx] > FlameDataMax )
+                        else 
                         {
-                            FlameDataMax = FlameSensData[FlameSensIdx];
-                        }
-                        
-                        if (FlameSensIdx >= 500)
-                        {
-                            if (FireVerifySens() != 0)
-                            {
-                                Extinguish = 1;
-                                State = FIRE_EXTINGUISH;   
-                            }
-                            else 
-                            {
-                                FlameSensIdx = 0;
-                                FlameSensCnt = -1;        
-                                State = NAVIGATE;                      
-                            }        
-                            
-                            FlameSensIdx = 0;
-                            FlameSensCnt = -1;                              
-                        }
-                    }  
-                    FlameSensCnt++;
+                            State = RETURN_ROUTE;                      
+                        }                         
+                    }
+                    
+                    SensorEvalFlag = 0;
                 }
                 
                 break;
@@ -453,7 +396,8 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
         if ( (FwdTurnDone != 0) & (RvsTurnDone != 0) )
         {
             SetDirection( NextDir );
-            SetSpeed( NextSpeed );
+            SetSpeed( NextSpeed );            
+            CatchUp = 0;
             ScLeft = 0;
             ScRight = 0;             
             M1Distance = 0;
@@ -462,7 +406,6 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
             TurnFlag = 0;
             FwdTurnDone = 0;
             RvsTurnDone = 0;           
-            Debug = 1;
         }
     }
 } 
@@ -496,11 +439,11 @@ void __ISR (12, IPL2SOFT) Timer3IntHandler(void)
 void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 {
     IFS0bits.T4IF = 0;      // Turn Flag Off
-//    if (TEST4++ > 50 && SpeedUp == 0)
+//    if (TEST4++ > 200 && SpeedUp == 0)
 //    {
 //        
 ////        SetSpeed(MED); 
-//        SetDirection( RIGHT_90 );           
+////        SetDirection( RIGHT_90 );           
 //        SpeedUp = 1;
 ////        TEST4 = 0;
 // 
@@ -529,8 +472,8 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
     if (M1Distance > 400 && M2Distance > 400 && TurnFlag == 0)
     {
         MapDist++;
-        M1Distance = (distanceDiff > 0)? distanceDiff: 0;
-        M2Distance = (distanceDiff < 0)? -distanceDiff: 0;       
+        M1Distance = M1Distance - 400;
+        M2Distance = M2Distance - 400;       
     }
     
     /// fix encoders
@@ -542,26 +485,6 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
         {
             CatchUp--;
             
-//            MdistDiff[encCnt] = distanceDiff;
-//            M1EncCounts[encCnt] = M1PosEdgeCnt;
-//            M2EncCounts[encCnt] = M2PosEdgeCnt;
-//        
-//            M1PWMCounts[encCnt] = Motor1Speed;
-//            M2PWMCounts[encCnt] = Motor2Speed;            
-//                                   
-//            encCnt++;    
-//            if (encCnt >= 1002)
-//            {
-//                if (fl == 0)
-//                {
-//                    fl = 1;
-//                    encCnt = 0;
-//                }
-//                else
-//                {
-//                    encCnt = 0;
-//                }
-//            }
             
             if (distanceDiff > 0 && TurnFlag == 0) // Motor 1 faster
             { 
@@ -573,7 +496,7 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
                 m2target = TargetEncoder + distanceDiff;
                 m1target = TargetEncoder - distanceDiff;
             
-                Motor2Speed = PI(M2PosEdgeCnt, m2target+1, MOTOR_2);
+                Motor2Speed = PI(M2PosEdgeCnt, m2target+2, MOTOR_2);
                 Motor1Speed = PI(M1PosEdgeCnt, m1target, MOTOR_1);                  
                 
                 M1Faster = 1;      
@@ -614,7 +537,6 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
                 }
                 else 
                 {
-                    EncEq = 0;
                     Motor2Speed = PI(M2PosEdgeCnt, TargetEncoder+1, MOTOR_2);
                     Motor1Speed = PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);      
                 }
@@ -622,11 +544,19 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
                 M1Faster = 0;
                 M2Faster = 0;                      
             }
-                    
-            lastM1 = M1PosEdgeCnt;
-            lastM2 = M2PosEdgeCnt;
               
             Fixed++;
+            
+//                    RBPI_s[xinp] = M2Wall;                        
+//                    RFPI_s[xinp] = M1Wall;                          
+//                    xinp++;
+//                    
+//                    if (xinp == 200)
+//                    {  
+//                        xinp = 0;
+//                    }               
+            
+            
             AdjustSpeedFlag =  1;
         }
     }   
@@ -648,17 +578,17 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 //****************************************************************************
 void __ISR (23, IPL3SOFT) ADCIntHandler(void)
 {   
-//   LATCbits.LATC7 ^= 1;     
    // 5 Channel sample
-   FlameSens[0] = ADC1BUF0;  // AN0
-   FlameSens[1] = ADC1BUF1;  // AN1
-   FlameSens[2] = ADC1BUF2;  // AN4  
-   FlameSens[3] = ADC1BUF3;  // AN5
-   FlameSens[4] = ADC1BUF4;  // AN6
-   IRSens[0] = ADC1BUF5;  // AN9   Left Back
-   IRSens[1] = ADC1BUF6;  // AN10  Left Fwd
-   IRSens[2] = ADC1BUF7;  // AN11  Right Back
-   IRSens[3] = ADC1BUF8;  // AN12  Right Fwd
+    //VERIFY
+   FlameSens[0] = ADC1BUF0;  // AN0     RightMost
+   FlameSens[1] = ADC1BUF1;  // AN1     RightMid    
+   FlameSens[4] = ADC1BUF2;  // AN6     LefttMost
+   FlameSens[3] = ADC1BUF3;  // AN7     LefttMid
+   IRSens[3] = ADC1BUF4;  // AN9  Right Fwd
+   IRSens[0] = ADC1BUF5;  // AN8   Left Back
+   IRSens[1] = ADC1BUF6;  // AN11  Left Fwd 
+   IRSens[2] = ADC1BUF7;  // AN10  Right Back
+   FlameSens[2] = ADC1BUF8;  // AN12    Middle
    
 //   ANADC = ADC1BUF5;
 //   Buffer value ranges from  0-1023
@@ -710,7 +640,7 @@ void __ISR (5, IPL4SOFT) IC1IntHandler(void)
             IC1NegEdgeTime = IC1BUF; 
             if ( IC1NegEdgeTime > IC1PosEdgeTime )
             {
-                SensDiff = IC1NegEdgeTime - IC1PosEdgeTime;
+                USSensDiff = IC1NegEdgeTime - IC1PosEdgeTime;
                 USSensorFlag = 1;
             }
         }
@@ -731,7 +661,6 @@ void __ISR (5, IPL4SOFT) IC1IntHandler(void)
 void __ISR (13, IPL4SOFT) IC3IntHandler(void)
 {
     IFS0bits.IC3IF = 0;     // Turn Flag Off	 
-//    LATCbits.LATC7 ^= 1;      
         
     if (IC3CONbits.ICBNE)
     {
@@ -754,7 +683,6 @@ void __ISR (17, IPL4SOFT) IC4IntHandler(void)
 {
     IFS0bits.IC4IF = 0;     // Turn Flag Off	
     
-//    LATCbits.LATC7 ^= 1;      
     if (IC4CONbits.ICBNE)
     {
         PersistantBuffer = IC4BUF;        
