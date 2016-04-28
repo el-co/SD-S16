@@ -32,9 +32,9 @@ void main(void)
     Fixed = 0;
     SpeedUp = 0;
     maxDistDiff = 0;   
-    LATCbits.LATC7 = 1;
+    LATCbits.LATC7 = 0;
     
-    LATAbits.LATA7 = 1;     //
+    LATAbits.LATA7 = 0;     //
     LATBbits.LATB9 = 0;     //
     LATAbits.LATA10 = 0;    //
     LATCbits.LATC8 = 0;     //
@@ -46,8 +46,8 @@ void main(void)
     xin = 0;
     
     flcnt = 0;
-    OneSec = 0;
-    SmplCnt = 0;
+    SixtnHz = 0;
+    SecCnt = 0;
        
     IRCnt = 0;
     RBChng = 0;
@@ -64,16 +64,51 @@ void main(void)
     flmMidMin = 0;
     flcn = 0;
     UnMappedTurn = 0;
+    WaterPulseCnt = 0;
+    
+    
+    RCONbits.BOR = 0;
+    RCONbits.POR = 0;
+    
+    
 //    sD = 0;
     while(1)
     { 
+
+//        if (RCONbits.BOR == 1)
+//        {   
+//            LATCbits.LATC7 = 1;
+//
+//            bor = 1;
+//        }        
+        
         switch(State)
         {
-            case IDLE:
-                State = START;
+            case IDLE:              
                 // Do nothing
                 // Push button to go to START
-                // select between mode 1 and mode 2
+                // select between mode 1 and mode 2                                 
+//                if (PORTAbits.RA3 == 0)
+//                {
+//                    if (PORTAbits.RA3 == 0)
+//                    {
+//                        Mode = MODE_1;
+//                        State = START;
+//                        SecCnt = 3;
+//                        while(PORTAbits.RA3 == 0);
+//                    }              
+//                }                
+//                if (PORTAbits.RA8 == 0)
+//                {
+//                    if (PORTAbits.RA8 == 0)
+//                    {
+//                        Mode = MODE_2;
+                        State = START;
+                        SecCnt = 3;
+//                        while(PORTAbits.RA8 == 0);
+//                    }              
+//                }                     
+
                 break;  
             case START:
                 // LED ON
@@ -83,7 +118,7 @@ void main(void)
                 MapIndex = 0;
                 MapDist = 0;
                 MapDone = 0;
-                if ( SensorEvalFlag != 0 )
+                if ( SensorEvalFlag != 0 && ThrshCnt < 21 )
                 {              
                     IRCnt++;
                     if (IRCnt%5 == 0)
@@ -94,9 +129,9 @@ void main(void)
                     }
                 }
                  
-                if (ThrshCnt >= 20)
+                if (ThrshCnt >= 20 && SecCnt == 0)
                 {                
-                    SetSpeed( SLOW );  
+                    SetSpeed( SLOW );   /// Turn OFF if testing flame sensors
                     SetDirection( FORWARD );                
                 
 
@@ -112,15 +147,16 @@ void main(void)
 
                 // uncomment to follow map
                 if (MapDone == 0)
-                {
+                { 
                     CheckMap();
+                 
                 }
 
                 //  Use pi code to adjust speed                  
                 if ( AdjustSpeedFlag != 0 )
-                {
+                {                                   
                     MotorSpeedCtrl( Motor1Speed, Motor2Speed );                   
-                    AdjustSpeedFlag = 0;
+                    AdjustSpeedFlag = 0;                                   
                 }
               
                 // front sensor
@@ -146,15 +182,17 @@ void main(void)
 //                    LF_s[xin] = IRSens[1];                        
 //                    
                     
-                    CheckWalls();                        
-                    RB_s[xin] = M2Wall;                        
-                    RF_s[xin] = M1Wall;                          
-                    xin++;
+                    CheckWalls();   
                     
-                    if (xin == 1013)
-                    {  
-                        xin = 0;
-                        l++;
+                    if (xin < 6500)
+                    {                     
+                        RB_s[xin] = M2Wall;                        
+                        RF_s[xin] = M1Wall;                          
+                        xin++;
+                    
+ 
+//                        xin = 0;
+//                        l++;
                     }   
 ////                    if (l >= 10)
 ////                    {
@@ -175,7 +213,7 @@ void main(void)
 //                        State = FIRE_DETECTED;
 ////                        State = FIRE_VERIFY;
 //                    }
-                   /////////////////////////////////////////////////// 
+//                   ///////////////////////////////////////////////// 
                                    
                     SensorEvalFlag = 0;
                 }                
@@ -208,6 +246,11 @@ void main(void)
                         NextDir = FORWARD;  
                         NextSpeed = OFF;                                                   
                     }
+//                    else if ( FlameSens[CENTER_FLAME] < 300 ) //smaller if too close and larger if to far
+//                    {
+//                        SetSpeed( SUPER_SLOW );
+//                        SetDirection( FORWARD );
+//                    }
                     else
                     {
                         SetDirection( STALL_M1 );
@@ -230,7 +273,6 @@ void main(void)
 //                        State = FIRE_VERIFY;
                    
                     }
-                    
 
 
                     SensorEvalFlag = 0;
@@ -254,7 +296,7 @@ void main(void)
                     if ( DecoyCheck() != 0)
                     {
                         if ( FireVerifySens() != 0)
-                        {
+                        {                           
                             State = FIRE_EXTINGUISH;
                         }
                         else 
@@ -279,14 +321,19 @@ void main(void)
                 
                 // 100ms pulse to solenoid
                 // check fire temp to verify fire extinguished
-                while (Extinguish != 0)
+                if (Extinguish != 0)
                 {                
                     // 100ms pulse to solenoid
-                    ShootWater();
-                    
-                    if ( FireVerifyTemp() == 0 )
+                    if ( ShootWater() != 0 )
                     {
-                        Extinguish = 0;
+                        if ( FireVerifyTemp() == 0 )
+                        {
+                            Extinguish = 0;
+                        }
+                        else
+                        {
+                            WaterPulse = 1;
+                        }
                     }
                 }       
                 
@@ -318,13 +365,25 @@ void main(void)
 void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
 {
     IFS0bits.T2IF = 0;      // Turn Flag Off
-
     
-//    if (OneSec++ >=16000)
-//    {
-//        OneSec = 0;
-//        SmplCnt = 0;
-//    }
+    if (WaterPulse != 0)
+    {
+        WaterPulseCnt++;
+        if (WaterPulseCnt >= 1600)
+        {
+            WaterPulse = 0;
+        }
+    }
+    
+
+    if (SixtnHz++ >=16000)
+    {
+        SixtnHz = 0;
+        LATAbits.LATA10 ^= 1;
+        SecCnt = (SecCnt > 0 )? SecCnt-1: 0;
+            
+    }
+    
     
     // Motors
     // 25 1cm
@@ -402,10 +461,13 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
             ScRight = 0;             
             M1Distance = 0;
             M2Distance = 0;   
-            distanceDiff = 0;            
+            distanceDiff = 0;  
+            AdjustSpeedFlag = 0;
+            M1Integral = 0;
+            M2Integral = 0;            
             TurnFlag = 0;
             FwdTurnDone = 0;
-            RvsTurnDone = 0;           
+            RvsTurnDone = 0; 
         }
     }
 } 
@@ -454,6 +516,8 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 //    {
 //        Fixed = 0;
 //    }
+    
+    
     if (MotorDir == REVERSE)
     {
         M2Distance -= M2PosEdgeCnt;    
@@ -527,12 +591,12 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
                     if ( FwdTurnCheck == MOTOR_1 )
                     {
                         Motor1Speed = (FwdTurnDone != 0)? 0: PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);
-                        Motor2Speed = (RvsTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+1, MOTOR_2);                        
+                        Motor2Speed = (RvsTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+2, MOTOR_2);                        
                     }
                     else 
                     {
                         Motor1Speed = (RvsTurnDone != 0)? 0: PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);
-                        Motor2Speed = (FwdTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+1, MOTOR_2); 
+                        Motor2Speed = (FwdTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+2, MOTOR_2); 
                     }                  
                 }
                 else 
@@ -547,14 +611,14 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
               
             Fixed++;
             
-//                    RBPI_s[xinp] = M2Wall;                        
-//                    RFPI_s[xinp] = M1Wall;                          
-//                    xinp++;
-//                    
-//                    if (xinp == 200)
-//                    {  
-//                        xinp = 0;
-//                    }               
+            if ( xinp < 200 )
+            {
+                    RBPI_s[xinp] = M2Wall;                        
+                    RFPI_s[xinp] = M1Wall;                          
+                    xinp++;
+            
+            }
+                                                        
             
             
             AdjustSpeedFlag =  1;

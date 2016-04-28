@@ -64,6 +64,12 @@ void GPIOInit(void)
     TRISCbits.TRISC7 = 0;       // RC7 Output   // Motor Dist main
     TRISCbits.TRISC8 = 0;       // RC8 Output   // 
 
+    // Buttons
+    //1 0000 1000
+    ANSELA &= ~(0x0108);
+    TRISAbits.TRISA3 = 1;			// Butt on RA3
+    TRISAbits.TRISA8 = 1;			// Butt on RA8    
+    
     // ADC Pins
     // Flame Sensors
     ANSELAbits.ANSA0    = 1;       // RA0 Analog  - AN0
@@ -318,129 +324,129 @@ void MapInit()
 //    MapDirection[7] = FORWARD;         
     /////////
     
-    MapDistance[0] = 350;
+    MapDistance[0] = 38; //350; 
     MapDirection[0] = FORWARD;    
-    MapDistance[1] = 0;
-    MapDirection[1] = RIGHT_45;  // 45 degree angle ish - adjust RIGHT_45_TURN_RVS and RIGHT_45_TURN_FWD
-    MapDistance[2] = 180;
+    MapDistance[1] = 1;
+    MapDirection[1] = FORWARD;  // 45 degree angle ish - adjust RIGHT_45_TURN_RVS and RIGHT_45_TURN_FWD
+    MapDistance[2] = 17; //180;
     MapDirection[2] = FORWARD;     
-    MapDistance[3] = 0;
-    MapDirection[3] = LEFT_45;  // 45 degree angle ish  - adjust LEFT_45_TURN_RVS and LEFT_45_TURN_FWD   
-    MapDistance[4] = 130;
+    MapDistance[3] = 1;
+    MapDirection[3] = FORWARD;  // 45 degree angle ish  - adjust LEFT_45_TURN_RVS and LEFT_45_TURN_FWD   
+    MapDistance[4] = 13;
     MapDirection[4] = FORWARD;  // check left sensors for Room 1 Door 
     MapDistance[5] = 0;
-    MapDirection[5] = LEFT_90; 
-    MapDistance[6] = 240;
+    MapDirection[5] = LEFT_45; 
+    MapDistance[6] = 20;
     MapDirection[6] = FORWARD; 
-    MapDistance[7] = 0;
-    MapDirection[7] = RIGHT_90; 
-    MapDistance[8] = 100;
+    MapDistance[7] = 5;
+    MapDirection[7] = FORWARD; 
+    MapDistance[8] = 10;
     MapDirection[8] = FORWARD; 
     MapDistance[9] = 0;
-    MapDirection[9] = LEFT_90;     
-    MapDistance[10] = 360;
+    MapDirection[9] = LEFT_45;     
+    MapDistance[10] = 36;
     MapDirection[10] = FORWARD;  
     MapDistance[11] = 0;
     MapDirection[11] = RIGHT_90; 
-    MapDistance[12] = 400;
+    MapDistance[12] = 40;
     MapDirection[12] = FORWARD;  
     MapDistance[13] = 0;
     MapDirection[13] = RIGHT_90;     
-    MapDistance[14] = 360;
+    MapDistance[14] = 36;
     MapDirection[14] = FORWARD; 
     MapDistance[15] = 0;     
     MapDirection[15] = RIGHT_90; 
-    MapDistance[16] = 500;
+    MapDistance[16] = 50;
     MapDirection[16] = FORWARD; 
     MapDistance[17] = 0;
     MapDirection[17] = LEFT_90;          
-    MapDistance[18] = 240;
+    MapDistance[18] = 24;
     MapDirection[18] = FORWARD; // Room 1 Exit    
     MapDistance[19] = 0;
     MapDirection[19] = LEFT_90;  
-    MapDistance[20] = 630;
+    MapDistance[20] = 63;
     MapDirection[20] = FORWARD; // check left sensors for  Room 2 Door    
     MapDistance[21] = 0;
     MapDirection[21] = LEFT_90; 
-    MapDistance[22] = 240;
+    MapDistance[22] = 24;
     MapDirection[22] = FORWARD; 
     MapDistance[23] = 0;
     MapDirection[23] = RIGHT_90;     
-    MapDistance[24] = 100;
+    MapDistance[24] = 10;
     MapDirection[24] = FORWARD; 
     MapDistance[25] = 0;
     MapDirection[25] = LEFT_90;  
-    MapDistance[26] = 360;
+    MapDistance[26] = 36;
     MapDirection[26] = FORWARD;  
     MapDistance[27] = 0;
     MapDirection[27] = RIGHT_90; 
-    MapDistance[28] = 400;
+    MapDistance[28] = 40;
     MapDirection[28] = FORWARD;  
     MapDistance[29] = 0;
     MapDirection[29] = RIGHT_90;     
-    MapDistance[30] = 360;
+    MapDistance[30] = 36;
     MapDirection[30] = FORWARD; 
     MapDistance[31] = 0;   
     MapDirection[31] = RIGHT_90; 
-    MapDistance[32] = 500;
+    MapDistance[32] = 50;
     MapDirection[32] = FORWARD; 
     MapDistance[33] = 0;
     MapDirection[33] = LEFT_90;      
-    MapDistance[34] = 240;
+    MapDistance[34] = 24;
     MapDirection[34] = FORWARD; // Room 2 Exit     
     MapDistance[35] = 0;
     MapDirection[35] = LEFT_90;  
-    MapDistance[36] = 660;
+    MapDistance[36] = 66;
     MapDirection[36] = FORWARD; // check left sensors for Room 3 Door     
     MapDistance[37] = 0;
     MapDirection[37] = LEFT_90; 
-    MapDistance[38] = 240;
+    MapDistance[38] = 24;
     MapDirection[38] = FORWARD; 
     MapDistance[39] = 0;
     MapDirection[39] = RIGHT_90;    
-    MapDistance[40] = 100;
+    MapDistance[40] = 10;
     MapDirection[40] = FORWARD; 
     MapDistance[41] = 0;
     MapDirection[41] = LEFT_90;      
-    MapDistance[42] = 360;
+    MapDistance[42] = 36;
     MapDirection[42] = FORWARD;  
     MapDistance[43] = 0;
     MapDirection[43] = RIGHT_90; 
-    MapDistance[44] = 400;
+    MapDistance[44] = 40;
     MapDirection[44] = FORWARD;  
     MapDistance[45] = 0;
     MapDirection[45] = RIGHT_90;     
-    MapDistance[46] = 360;
+    MapDistance[46] = 36;
     MapDirection[46] = FORWARD;     
     MapDistance[47] = 0;         
     MapDirection[47] = RIGHT_90; 
-    MapDistance[48] = 500;
+    MapDistance[48] = 50;
     MapDirection[48] = FORWARD; 
     MapDistance[49] = 0;
     MapDirection[49] = LEFT_90;      
-    MapDistance[50] = 240;
+    MapDistance[50] = 24;
     MapDirection[50] = FORWARD; // Room 3 Exit         
     MapDistance[51] = 0;
     MapDirection[51] = LEFT_90;  
-    MapDistance[52] = 500;
+    MapDistance[52] = 50;
     MapDirection[52] = FORWARD;   
     MapDistance[53] = 0;
     MapDirection[53] = TURN_180; 
-    MapDistance[54] = 500;
+    MapDistance[54] = 50;
     MapDirection[54] = FORWARD; // check left sensors for Room 3 Door    
     MapDistance[55] = 660;
     MapDirection[55] = FORWARD; // check left sensors for Room 2 Door 
-    MapDistance[56] = 630;
+    MapDistance[56] = 63;
     MapDirection[56] = FORWARD; // check left sensors for Room 1 Door 
-    MapDistance[57] = 130;
+    MapDistance[57] = 13;
     MapDirection[57] = FORWARD;       
     MapDistance[58] = 0;
     MapDirection[58] = RIGHT_45;  // 45 degree angle ish  
-    MapDistance[59] = 180;
+    MapDistance[59] = 18;
     MapDirection[59] = FORWARD;     
     MapDistance[60] = 0;
     MapDirection[60] = LEFT_45;  // 45 degree angle ish      
-    MapDistance[61] = 350;
+    MapDistance[61] = 35;
     MapDirection[61] = FORWARD; 
     MapDistance[62] = 0;
     MapDirection[62] = FORWARD;          
@@ -461,7 +467,7 @@ void MapInit()
 void MotorSpeedCtrl( uint32 M1Speed, uint32 M2Speed )
 {    
     OC4RS = M1Speed; // Slower motor            
-    OC2RS = M2Speed;  
+    OC2RS = M2Speed;      
 }
 
 //****************************************************************************
@@ -626,7 +632,7 @@ void SetSpeed( uint32 Speed )
             Speed = SUPER_SLOW;            
             break;            
         case(SLOW):
-            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+30 );  
+            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+40 );  
 //            MotorSpeedCtrl( 0, SLOW_SPEED_INIT );  
             TargetEncoder = SLOW_SPEED;   
             MaxPWM = SLOW_SPEED_INIT + 150;
@@ -675,9 +681,13 @@ void SetDirection( uint32 Direction)
                 TurnFlag = 0;                
             break;  
         case(STALL_M1):
+//                MotorSpeedCtrl( 0, SLOW_SPEED_INIT );   
+            
                 MotorDirectionCtrl( STLL, IGN );   
             break;              
         case(STALL_M2):
+//                MotorSpeedCtrl( SLOW_SPEED_INIT, 0 );   
+            
                 MotorDirectionCtrl( IGN, STLL );   
             break;              
         case(LEFT_45):
@@ -793,8 +803,7 @@ uint8 CheckFlameDetectors()
         if (FlameSens[i] > 30)
         {
             FlameDetected = 1;
-        }     
-        
+        }            
     }
   
     return FlameDetected;
@@ -825,7 +834,7 @@ uint32 CenterFlame()
 }
 
 void CheckMap()
-{
+{    
     if ( MapDist == MapDistance[MapIndex] && TurnFlag == 0 )
     {
         MapDist = 0;
@@ -833,9 +842,10 @@ void CheckMap()
         M2Distance = 0;   
         
         MapIndex++;
+        dir = MapDirection[MapIndex];
         if (MapIndex < MAP_MAX)
         {
-            if ( MapDirection[MapIndex] != FORWARD ||  MapDirection[MapIndex] != REVERSE || MapDirection[MapIndex] != DIR_OFF )
+            if ( MapDirection[MapIndex] != FORWARD &&  MapDirection[MapIndex] != REVERSE && MapDirection[MapIndex] != DIR_OFF )
             {
                 SetDirection( MapDirection[MapIndex] );
                 NextDir = MapDirection[MapIndex+1];  
@@ -843,14 +853,17 @@ void CheckMap()
             }
             else 
             {
-                SetDirection( MapDirection[MapIndex] );
+                SetSpeed( SLOW );                  
+                SetDirection( MapDirection[MapIndex] );                  
+                
             }
         }
         else
         {
             SetDirection( STALL_M1 );
             SetDirection( STALL_M2 );
-            SetSpeed( OFF );
+            SetSpeed( OFF );           
+            
             MapDone = 1;
         }      
     }
@@ -896,14 +909,15 @@ uint32 CheckCollisionSensors()
     }
     if ( (IRSens[2] > 750) && (IRSens[3] > 750) ) // Right Sensors
     {
-        if (Collision == RIGHT_90)
-        {
-            Collision = TURN_180; // or reverse
-        }
-        else
-        {
-            Collision = LEFT_90;
-        }
+        Collision = (Collision == RIGHT_90)? TURN_180: LEFT_90;
+//        if (Collision == RIGHT_90)
+//        {
+//            Collision = TURN_180; // or reverse
+//        }
+//        else
+//        {
+//            Collision = LEFT_90;
+//        }
     }   
      
     return Collision;
@@ -917,9 +931,21 @@ uint8 ReRoute()
     
     return AtMapLocation;
 }
-void ShootWater()
+uint8 ShootWater()
 {
-    // 100 ms pulse
+    uint8 plseDne = 0;
+    
+    // 100 ms pulse    
+    if ( WaterPulse == 0 )
+    {
+        LATCbits.LATC4 = 0;        
+        plseDne = 1;
+    }
+    else
+    {
+        LATCbits.LATC4 = 1;
+    }
+    return plseDne;
 }
 
 uint8 FireVerifyTemp()
@@ -1088,4 +1114,24 @@ uint8 DecoyCheck()
     
     
     return ChkCmplt;
+}
+
+uint8 CheckForDoor(uint8 Side)
+{
+    uint8 DoorCheck = CLEAR_SENS;
+    uint16 BackSens;
+    uint16 FrontSens;
+    
+    BackSens = (Side == LEFT_SIDE)? IRSens[0]: IRSens[2];
+    FrontSens = (Side == LEFT_SIDE)? IRSens[1]: IRSens[3];
+    
+    if ( FrontSens > 50 )
+    {
+        DoorCheck = FRONT_SENS;
+    }
+    if ( BackSens > 50 )
+    {
+        DoorCheck = (DoorCheck == FRONT_SENS)? BOTH_SENS: BACK_SENS;        
+    }    
+    return DoorCheck;
 }

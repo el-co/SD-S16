@@ -19,13 +19,13 @@
 #include <sys/attribs.h>
 
 typedef unsigned char uint8;
-typedef unsigned short uint16;
+typedef unsigned short uint16;  
 typedef signed short sint16;
 typedef unsigned int uint32;
 typedef signed int sint32;
 
 #define MED_SPEED_INIT          1880 
-#define SLOW_SPEED_INIT         750 
+#define SLOW_SPEED_INIT         660 
 #define SUPER_SLOW_SPEED_INIT   530 
 
 #define MED_SPEED           225
@@ -36,19 +36,22 @@ typedef signed int sint32;
 #define SLOW_SPEED_CHK          135
 #define SUPER_SLOW_SPEED_CHK    105
 
-#define RIGHT_45_TURN_RVS       350
-#define LEFT_45_TURN_RVS        350   
-#define RIGHT_TURN_RVS          705
-#define LEFT_TURN_RVS           705
-#define FULL_TURN_RVS           1415
-#define SCAN_RVS                20
+#define RIGHT_45_TURN_RVS       320 // inc to to turn more, dec to turn less
+#define RIGHT_45_TURN_FWD       320 // change both rvs and fwd to match
 
-#define RIGHT_45_TURN_FWD       350  
-#define LEFT_45_TURN_FWD        350   
-#define RIGHT_TURN_FWD          705
-#define RIGHT_TURN_FWD          705
-#define LEFT_TURN_FWD           705
+#define LEFT_45_TURN_RVS        320 
+#define LEFT_45_TURN_FWD        320   
+
+#define RIGHT_TURN_RVS          695
+#define RIGHT_TURN_FWD          695
+
+#define LEFT_TURN_RVS           695
+#define LEFT_TURN_FWD           695
+
+#define FULL_TURN_RVS           1415
 #define FULL_TURN_FWD           1415
+
+#define SCAN_RVS                20
 #define SCAN_FWD                20
 
 #define CENTER_FLAME     2
@@ -88,12 +91,13 @@ uint32 CenterFlame();
 void CheckMap();
 uint32 CheckCollisionSensors();
 uint8 ReRoute();
-void ShootWater();
+uint8 ShootWater();
 uint8 FireVerifyTemp();
 uint8 DecoyCheck();
 uint8 FireVerifySens();
 void CheckFrontSensor();
 uint8 CheckWalls();
+uint8 CheckForDoor( uint8 Side );
 
 //****************************************************************************
 // 
@@ -111,6 +115,11 @@ enum HAAVOCC_STATES
     IDLE
 };
 
+enum ROBOT_MODE
+{
+    MODE_1,
+    MODE_2
+};
 //enum NAVIGATE_STATES
 //{
 //    FOLLOW_ROUTE,
@@ -118,6 +127,20 @@ enum HAAVOCC_STATES
 //    STOP,
 //    RETURN_TO_ROUTE
 //};
+
+enum WALL_SENSOR
+{
+    CLEAR_SENS,
+    FRONT_SENS,
+    BACK_SENS,
+    BOTH_SENS
+};
+
+enum SENSOR_SIDE
+{
+    LEFT_SIDE,
+    RIGHT_SIDE
+};
 
 enum SPEEDS
 {
@@ -194,6 +217,7 @@ enum WALL_DETECT
 //****************************************************************************
 //uint8 Map[84][30];
 uint8 State;
+uint8 Mode;
 
 uint16 FlameSens[5];
 uint16 IRSens[4];
@@ -271,6 +295,9 @@ sint16 M2Wall;
 uint32 UnMappedTurn;
 
 uint8 MapDone;
+uint32 WaterPulseCnt;
+uint8 WaterPulse;
+
 
 // DEBUG
 uint32 TEST4;
@@ -284,18 +311,18 @@ uint16 loops;
 uint32 l;
 
 // sample for 1 sec
-uint32 OneSec;
-uint32 SmplCnt;
+uint32 SixtnHz;
+uint32 SecCnt;
 
 /// ir sensors
-//sint16 RB_s[6500];
-//sint16 RF_s[6500];
-//sint16 RBPI_s[200];
-//sint16 RFPI_s[200];
-//uint32 xinp;
+sint16 RB_s[6500];
+sint16 RF_s[6500];
+sint16 RBPI_s[200];
+sint16 RFPI_s[200];
+uint32 xinp;
 
-sint16 RB_s[1013];
-sint16 RF_s[1013];
+//sint16 RB_s[1013];
+//sint16 RF_s[1013];
 //uint16 LB_s[1013];
 //uint16 LF_s[1013];
 
@@ -337,5 +364,7 @@ sint32 RFChng;
 
 uint16 IRSmpCnt;
 uint32 throwaway;
+
+uint8 dir;
 
 #endif	/* HAVVOCC_H */
