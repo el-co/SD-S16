@@ -70,7 +70,11 @@ void main(void)
     RCONbits.BOR = 0;
     RCONbits.POR = 0;
     
-    
+    AftTrn = 0;
+    tf = 0;
+//    WallFollowing = 0;
+    cnt = 0; 
+    ss = 0;
 //    sD = 0;
     while(1)
     { 
@@ -137,19 +141,17 @@ void main(void)
 
                     RBThresh = RBThresh/20;
                     RFThresh = RFThresh/20; 
-                    
+//                    WallFollowing = 1;
                     State = NAVIGATE; 
                 }
                 break;
             case NAVIGATE:
                 // 	Use map to navigate
                 State = NAVIGATE; 
-
                 // uncomment to follow map
                 if (MapDone == 0)
                 { 
-                    CheckMap();
-                 
+                    CheckMap();                
                 }
 
                 //  Use pi code to adjust speed                  
@@ -186,14 +188,18 @@ void main(void)
                     
                     if (xin < 6500)
                     {                     
-                        RB_s[xin] = M2Wall;                        
-                        RF_s[xin] = M1Wall;                          
+                        RB_s[xin] = M1Wall;                        
+                        RF_s[xin] = M2Wall;                          
                         xin++;
                     
  
 //                        xin = 0;
 //                        l++;
                     }   
+                    else 
+                    {
+                        xin = 0;
+                    }
 ////                    if (l >= 10)
 ////                    {
 ////                        l = 0;
@@ -210,6 +216,7 @@ void main(void)
 //                        SetSpeed( OFF );      
 //                        ScLeft = 0;
 //                        ScRight = 0;
+//                        inc =0;
 //                        State = FIRE_DETECTED;
 ////                        State = FIRE_VERIFY;
 //                    }
@@ -228,15 +235,17 @@ void main(void)
                 {                                   
                     // Cnter flame and get closer
                     CntrFlame = CenterFlame();
+   
                     if ( CntrFlame != CENTER_FLAME )
                     {
-                        if ((CntrFlame == 3 || CntrFlame == 4) && ScLeft == 0) // Left Sensors
+                        if ((CntrFlame == 0 || CntrFlame == 1) && ScLeft == 0) // Left Sensors
                         {
                             ScLeft = 1;
                             ScRight = 0;                            
-                            SetDirection( LEFT_SCAN );                           
+                            SetDirection( LEFT_SCAN ); 
+                            inc = FlameSens[CENTER_FLAME];                            
                         }
-                        else if ((CntrFlame == 0 || CntrFlame == 1) && ScRight == 0) // Right Sensors
+                        else if ((CntrFlame == 3 || CntrFlame == 4) && ScRight == 0) // Right Sensors
                         {
                             ScLeft = 0;                            
                             ScRight = 1;
@@ -244,13 +253,67 @@ void main(void)
                         }  
                         SetSpeed( SUPER_SLOW );
                         NextDir = FORWARD;  
-                        NextSpeed = OFF;                                                   
+                        NextSpeed = OFF; 
+                        inc = FlameSens[CENTER_FLAME];
                     }
-//                    else if ( FlameSens[CENTER_FLAME] < 300 ) //smaller if too close and larger if to far
+//                    else if ( FlameSens[CENTER_FLAME] < 20 )
 //                    {
+//                        if (ScRight != 0)
+//                        {
+//                            SetDirection( RIGHT_SCAN ); 
+//                        }
+//                        if (ScLeft != 0)
+//                        {
+//                            SetDirection( LEFT_SCAN ); 
+//                        }
+//                        
 //                        SetSpeed( SUPER_SLOW );
-//                        SetDirection( FORWARD );
+//                        NextDir = FORWARD;  
+//                        NextSpeed = OFF;   
 //                    }
+                    else if ( FlameSens[CENTER_FLAME] < 120 ) //smaller if too close and larger if to far
+                    {
+//                        sens[ss] = FlameSens[CntrFlame];
+//                        sens1[ss] = FlameSens[1];
+//                        sens2[ss] = FlameSens[0];
+//                        
+//                        csens[ss] = CENTER_FLAME;
+                        ss++;
+                        if (ss>800)
+                        {
+                           ss = 0;
+                        }    
+                        
+                        if (incCnt++ < 5)
+                        {
+                            SetSpeed( SUPER_SLOW );
+                            SetDirection( FORWARD );
+                        }
+                        else if ((inc - FlameSens[CntrFlame]) > 3 )
+                        {
+                            SetDirection( STALL_M1 );
+                            SetDirection( STALL_M2 );                            
+                            if (ScRight != 0)
+                            {
+                                SetDirection( RIGHT_SCAN ); 
+                            }
+                            if (ScLeft != 0)
+                            {
+                                SetDirection( LEFT_SCAN ); 
+                            }
+
+                            SetSpeed( SUPER_SLOW );
+                            NextDir = FORWARD;  
+                            NextSpeed = OFF;                              
+                            
+                            incCnt = 0;
+                        }
+                        else
+                        {
+                            inc = FlameSens[CntrFlame];
+                            incCnt = 0;
+                        }
+                    }
                     else
                     {
                         SetDirection( STALL_M1 );
@@ -259,18 +322,18 @@ void main(void)
                         TurnFlag = 0;
                         ScLeft = 0;
                         ScRight = 0;
-//                        I2C1Init(145); 
+                        I2C2Init(145); 
                         
-                        /*
+                        
                          //needed for decoycheck
-                        flmMidMin = 32767;
-                        flmMidMax = -32768;
-                        PrvMidFlame = FlameSens[2];   
-                        IgnFirst = 1;                    
+//                        flmMidMin = 32767;
+//                        flmMidMax = -32768;
+//                        PrvMidFlame = FlameSens[2];   
+//                        IgnFirst = 1;                    
 
-                         */                        
+//                        State = NAVIGATE;                        
                         
-//                        State = FIRE_VERIFY;
+                        State = FIRE_VERIFY;
                    
                     }
 
@@ -281,12 +344,16 @@ void main(void)
             case FIRE_VERIFY:
                 // use temp sensors to verify flame
 //                if (FireVerifyTemp() != 0)
-//                {
+//                {   
+//                    ss = 0;
 //                    Extinguish = 1;
-//                    State = FIRE_EXTINGUISH;   
+//                    State = NAVIGATE; 
+////                    State = FIRE_EXTINGUISH;   
 //                }
 //                else 
 //                {
+//                    ss = 0;
+//                    Extinguish = 0; 
 //                    State = NAVIGATE;                      
 //                }
                 
@@ -296,12 +363,16 @@ void main(void)
                     if ( DecoyCheck() != 0)
                     {
                         if ( FireVerifySens() != 0)
-                        {                           
-                            State = FIRE_EXTINGUISH;
+                        {    
+                            ss = 0;
+                            State = NAVIGATE; 
+//                            State = FIRE_EXTINGUISH;
                         }
                         else 
                         {
-                            State = RETURN_ROUTE;                      
+                            ss = 0;
+                            State = NAVIGATE;
+//                            State = RETURN_ROUTE;                      
                         }                         
                     }
                     
@@ -375,7 +446,11 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
         }
     }
     
-
+    if (cnt > 0)
+    {
+        cnt++;
+    }
+    
     if (SixtnHz++ >=16000)
     {
         SixtnHz = 0;
@@ -391,7 +466,7 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
     // 400 10cm
     
     
-    if  ( (State == NAVIGATE || State == FIRE_DETECTED ) && TurnFlag == 1) 
+    if  ( ( State == NAVIGATE || State == FIRE_DETECTED ) && TurnFlag == 1) 
     {
         if (FwdTurnCheck == MOTOR_1)
         {
@@ -399,11 +474,11 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
             RvsTurnDist = M2Distance + M2PosEdgeCnt;
             if ( FwdTurnDist >= FwdTurnCnt )
             {
-                if (FwdTurnDone == 0)
-                {
-                    tempFwd = FwdTurnDist;
-                }
-                M1PosEdgeCnt = 0;
+//                if (FwdTurnDone == 0)
+//                {
+//                    tempFwd = FwdTurnDist;
+//                }
+//                M1PosEdgeCnt = 0;
                 Motor1Speed = 0;
                 SetDirection( STALL_M1 );
                 AdjustSpeedFlag =  1;  
@@ -412,14 +487,11 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
             }
             if ( RvsTurnDist >= RvsTurnCnt )
             {
-                if (RvsTurnDone == 0)
-                {
-                    tempRvs = RvsTurnDist;
-                }
-//
-//                slowDown[sD] = M2PosEdgeCnt;
-//                sD++;
-                M2PosEdgeCnt = 0;
+//                if (RvsTurnDone == 0)
+//                {
+//                    tempRvs = RvsTurnDist;
+//                }
+//                M2PosEdgeCnt = 0;
                 Motor2Speed = 0;
                 SetDirection( STALL_M2 );
                 AdjustSpeedFlag =  1;
@@ -434,7 +506,7 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
             RvsTurnDist = M1Distance + M1PosEdgeCnt;
             if ( FwdTurnDist >= FwdTurnCnt )
             {
-                M2PosEdgeCnt = 0;
+//                M2PosEdgeCnt = 0;
                 Motor2Speed = 0;
                 SetDirection( STALL_M2 );
                 AdjustSpeedFlag =  1;
@@ -443,7 +515,7 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
             }
             if ( RvsTurnDist >= RvsTurnCnt )
             {
-                M1PosEdgeCnt = 0;
+//                M1PosEdgeCnt = 0;
                 Motor1Speed = 0;
                 SetDirection( STALL_M1 );
                 AdjustSpeedFlag =  1;  
@@ -452,22 +524,39 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler(void)
             }            
         }
         
-        if ( (FwdTurnDone != 0) & (RvsTurnDone != 0) )
-        {
-            SetDirection( NextDir );
-            SetSpeed( NextSpeed );            
-            CatchUp = 0;
-            ScLeft = 0;
-            ScRight = 0;             
-            M1Distance = 0;
-            M2Distance = 0;   
-            distanceDiff = 0;  
-            AdjustSpeedFlag = 0;
-            M1Integral = 0;
-            M2Integral = 0;            
-            TurnFlag = 0;
-            FwdTurnDone = 0;
-            RvsTurnDone = 0; 
+        if ( (FwdTurnDone != 0) && (RvsTurnDone != 0) )
+        {      
+            if (AftTrn++ > 640)
+            {
+                AftTrn = 0;
+            }
+//            if (AftTrn++ > 32)
+//            {
+//            AftTrn++;
+            if ( (AftTrn == 0) && ( M1PosEdgeCnt <= 1 ) && ( M2PosEdgeCnt <= 1) )
+            {
+                SetDirection( NextDir );
+                SetSpeed( NextSpeed );            
+                CatchUp = 0;
+                ScLeft = 0;
+                ScRight = 0;             
+                M1Distance = 0;
+                M2Distance = 0;   
+                
+                M1PosEdgeCnt = 0;
+                M2PosEdgeCnt = 0;
+
+                distanceDiff = 0;  
+                AdjustSpeedFlag = 0;
+                M1Integral = 0;
+                M2Integral = 0;            
+                TurnFlag = 0;
+                FwdTurnDone = 0;
+                RvsTurnDone = 0; 
+//                AftTrn = 0;
+//                tf = 1;
+//            }
+            }
         }
     }
 } 
@@ -517,6 +606,23 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 //        Fixed = 0;
 //    }
     
+//    if (tf != 0 )
+//    {
+//        if (CatchUp == 0)
+//        {
+//            m1 = M1PosEdgeCnt;
+//            m2 = M2PosEdgeCnt;
+//        } 
+//        else if (CatchUp == 1)
+//        {
+//            m1_2 = M1PosEdgeCnt;
+//            m2_2 = M2PosEdgeCnt;            
+//        }
+//        else if (CatchUp == 2)
+//        {
+//            tf =0;      
+//        }
+//    }    
     
     if (MotorDir == REVERSE)
     {
@@ -533,101 +639,152 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
     maxDistDiff = ( maxDistDiff < distanceDiff )? distanceDiff: maxDistDiff;    
     maxDistDiffNeg = ( maxDistDiffNeg > distanceDiff )? distanceDiff: maxDistDiffNeg;    
 
-    if (M1Distance > 400 && M2Distance > 400 && TurnFlag == 0)
-    {
-        MapDist++;
-        M1Distance = M1Distance - 400;
-        M2Distance = M2Distance - 400;       
+    if ( (M1Distance >= 400) && (M2Distance >= 400) && (TurnFlag == 0))
+    {     
+//        while ( (M1Distance >= 400) && (M2Distance >= 400) )
+//        {
+            MapDist++;
+            M1Distance = M1Distance - 400;
+            M2Distance = M2Distance - 400;    
+//        }
     }
+//    if ( ( CurrSpeed == SUPER_SLOW ) && ( M1PosEdgeCnt > SUPER_SLOW_SPEED - 5 ) && ( M1PosEdgeCnt < SUPER_SLOW_SPEED + 5 )
+//       && ( M2PosEdgeCnt > SUPER_SLOW_SPEED - 5 ) && ( M2PosEdgeCnt < SUPER_SLOW_SPEED + 5 ) )
+//    {
+//        SetSpeed( SLOW );                    
+//    }  
+    LATCbits.LATC8 = 0;     //
+    
+//    if (WallFollowing != 0)
+//    {
+//        
+//        M1Wall = M1Wall;
+//        M2Wall = M2Wall;    
+//        if ((M1Wall != 0 || M2Wall!=0) && CatchUp >3)
+//        {
+//        LATCbits.LATC8 = 1;     //
+//            
+//        }
+//            
+//    }
+//    else
+//    {
+//        M1Wall = 0;
+//        M2Wall = 0;         
+//    }
+    
+
     
     /// fix encoders
     if ( (State == NAVIGATE) && (AdjustSpeedFlag ==  0) 
-         && (M1PosEdgeCnt > 0) && (M1PosEdgeCnt < SpeedCheck)  
-         && (M2PosEdgeCnt > 0) && (M2PosEdgeCnt < SpeedCheck) )
+         && (M1PosEdgeCnt < SpeedCheck) && (M2PosEdgeCnt < SpeedCheck) )
     {
-        if (CatchUp++ > 3)
+        if ( (M1PosEdgeCnt > 0) && (M2PosEdgeCnt > 0) && (TurnFlag == 0) )
         {
-            CatchUp--;
-            
-            
-            if (distanceDiff > 0 && TurnFlag == 0) // Motor 1 faster
-            { 
-                LATCbits.LATC7 = 1;                 
-                
-                encAdjust = distanceDiff/3.6;
-                distanceDiff = (sint32) (( encAdjust < 0 )? encAdjust - 0.5: encAdjust + 0.5);
-                
-                m2target = TargetEncoder + distanceDiff;
-                m1target = TargetEncoder - distanceDiff;
-            
-                Motor2Speed = PI(M2PosEdgeCnt, m2target+2, MOTOR_2);
-                Motor1Speed = PI(M1PosEdgeCnt, m1target, MOTOR_1);                  
-                
-                M1Faster = 1;      
-                M2Faster = 0;                                
-            }
-            else if (distanceDiff < 0 && TurnFlag == 0) // Motor 2 faster
-            {   
-                LATCbits.LATC7 = 1; 
-
-                encAdjust = distanceDiff/3.6;
-                distanceDiff = (sint32) (( encAdjust < 0 )? encAdjust - 0.5: encAdjust + 0.5);                
-                
-                m2target = TargetEncoder + distanceDiff;
-                m1target = TargetEncoder - distanceDiff;
-            
-                Motor2Speed = PI(M2PosEdgeCnt, m2target+1, MOTOR_2);
-                Motor1Speed = PI(M1PosEdgeCnt, m1target, MOTOR_1);                                
-               
-                M2Faster = 1;            
-                M1Faster = 0;
-            }                    
-            else 
-            {                           
-                LATCbits.LATC7 = 0;   
-                   
-                if ( TurnFlag == 1 )
-                {
-                    if ( FwdTurnCheck == MOTOR_1 )
-                    {
-                        Motor1Speed = (FwdTurnDone != 0)? 0: PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);
-                        Motor2Speed = (RvsTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+2, MOTOR_2);                        
-                    }
-                    else 
-                    {
-                        Motor1Speed = (RvsTurnDone != 0)? 0: PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);
-                        Motor2Speed = (FwdTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+2, MOTOR_2); 
-                    }                  
-                }
-                else 
-                {
-                    Motor2Speed = PI(M2PosEdgeCnt, TargetEncoder+1, MOTOR_2);
-                    Motor1Speed = PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);      
-                }
-                
-                M1Faster = 0;
-                M2Faster = 0;                      
-            }
-              
-            Fixed++;
-            
-            if ( xinp < 200 )
+            if ( CatchUp++ > 3 )
             {
-                    RBPI_s[xinp] = M2Wall;                        
-                    RFPI_s[xinp] = M1Wall;                          
-                    xinp++;
-            
+                CatchUp--;          
+                
+                if ( distanceDiff > 0 ) // Motor 1 faster
+                { 
+                    LATAbits.LATA7 = 1;                 
+                    LATBbits.LATB9 = 0; 
+
+                    encAdjust = distanceDiff/3.6;
+                    distanceDiff = (sint32) (( encAdjust < 0 )? encAdjust - 0.5: encAdjust + 0.5);
+                    
+//                    if (WallFollowing != 0)
+//                    {
+//                        m2target = TargetEncoder + M2Wall;
+//                        m1target = TargetEncoder + M1Wall;                      
+//                    }
+//                    else
+//                    {
+                        m2target = TargetEncoder + distanceDiff;
+                        m1target = TargetEncoder - distanceDiff;
+//                    }
+                    Motor2Speed = PI(M2PosEdgeCnt, m2target+2, MOTOR_2);
+                    Motor1Speed = PI(M1PosEdgeCnt, m1target, MOTOR_1);                  
+
+                    M1Faster = 1;      
+                    M2Faster = 0;                                
+                }
+                else if ( distanceDiff < 0 ) // Motor 2 faster
+                {   
+                    LATAbits.LATA7 = 0;                 
+                    LATBbits.LATB9 = 1; 
+
+                    encAdjust = distanceDiff/3.6;
+                    distanceDiff = (sint32) (( encAdjust < 0 )? encAdjust - 0.5: encAdjust + 0.5);                
+
+//                    if (WallFollowing != 0)
+//                    {
+//                        m2target = TargetEncoder + M2Wall;
+//                        m1target = TargetEncoder + M1Wall;                      
+//                    }
+//                    else
+//                    {                    
+                        m2target = TargetEncoder + distanceDiff;
+                        m1target = TargetEncoder - distanceDiff;
+//                    }
+                    Motor2Speed = PI(M2PosEdgeCnt, m2target+2, MOTOR_2);
+                    Motor1Speed = PI(M1PosEdgeCnt, m1target, MOTOR_1);                                
+
+                    M2Faster = 1;            
+                    M1Faster = 0;
+                }                    
+                else 
+                {                           
+                    LATAbits.LATA7 = 1;   
+                    LATBbits.LATB9 = 1; 
+                    
+//                    if (WallFollowing != 0)
+//                    {
+//                        m2target = TargetEncoder + M2Wall;
+//                        m1target = TargetEncoder + M1Wall;                      
+//                    }
+//                    else
+//                    {                    
+//                        m2target = TargetEncoder+2;
+//                        m1target = TargetEncoder;
+//                    }                    
+                    Motor2Speed = PI(M2PosEdgeCnt, TargetEncoder+2, MOTOR_2);
+                    Motor1Speed = PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);      
+
+                    M1Faster = 0;
+                    M2Faster = 0;                      
+                }
+
+                Fixed++;
+
+                if ( xinp < 45 )
+                {
+                        RBPI_s[xinp] = M1Wall;                        
+                        RFPI_s[xinp] = M2Wall;                          
+                        xinp++;           
+                }
+
+                AdjustSpeedFlag =  1;
             }
-                                                        
-            
-            
-            AdjustSpeedFlag =  1;
         }
+        else if ( TurnFlag == 1 )
+        {
+            if ( FwdTurnCheck == MOTOR_1 )
+            {
+                Motor1Speed = (FwdTurnDone != 0)? 0: PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);
+                Motor2Speed = (RvsTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+2, MOTOR_2);                        
+            }
+            else 
+            {
+                Motor1Speed = (RvsTurnDone != 0)? 0: PI(M1PosEdgeCnt, TargetEncoder, MOTOR_1);
+                Motor2Speed = (FwdTurnDone != 0)? 0: PI(M2PosEdgeCnt, TargetEncoder+2, MOTOR_2); 
+            } 
+            AdjustSpeedFlag =  1;            
+        }            
     }   
     
     M2PosEdgeCnt = 0;
-    M1PosEdgeCnt = 0;  
-     
+    M1PosEdgeCnt = 0;   
 }
 
 //****************************************************************************
@@ -753,3 +910,19 @@ void __ISR (17, IPL4SOFT) IC4IntHandler(void)
         M2PosEdgeCnt++;
     }  
 } 
+
+void __ISR (38, IPL3SOFT) I2CMIntHandler(void)
+{
+    if (IFS1bits.I2C2MIF != 0)
+    {
+        IFS1bits.I2C2MIF = 0; //sen pen trstat
+    }
+    if (IFS1bits.I2C2BIF != 0)
+    {
+        IFS1bits.I2C2BIF = 0;  
+    }
+     if (IFS1bits.I2C2SIF != 0)
+    {
+        IFS1bits.I2C2SIF = 0;  
+    }
+}

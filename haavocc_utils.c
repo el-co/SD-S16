@@ -43,6 +43,13 @@ void Init(void)
     Extinguish = 0;
     FollowingMap = 1;
     MapIndex = 0;
+
+    M1_SSlow = SUPER_SLOW_SPEED_INIT;
+    M2_SSlow = SUPER_SLOW_SPEED_INIT + 40;    
+    M1_Slow = SLOW_SPEED_INIT;
+    M2_Slow = SLOW_SPEED_INIT + 40;
+    M1_Med = MED_SPEED_INIT;
+    M2_Med = MED_SPEED_INIT + 30;
 }
 
 //****************************************************************************
@@ -58,6 +65,8 @@ void Init(void)
 void GPIOInit(void)
 {
     // LED Pins
+    ANSELB = 0;
+
     TRISAbits.TRISA7 = 0;       // RA7 Output   // 
     TRISBbits.TRISB9 = 0;       // RB9 Output   // 
     TRISAbits.TRISA10 = 0;      // RA10 Output  // 
@@ -324,7 +333,7 @@ void MapInit()
 //    MapDirection[7] = FORWARD;         
     /////////
     
-    MapDistance[0] = 38; //350; 
+    MapDistance[0] = 35; //350; 
     MapDirection[0] = FORWARD;    
     MapDistance[1] = 1;
     MapDirection[1] = FORWARD;  // 45 degree angle ish - adjust RIGHT_45_TURN_RVS and RIGHT_45_TURN_FWD
@@ -336,27 +345,27 @@ void MapInit()
     MapDirection[4] = FORWARD;  // check left sensors for Room 1 Door 
     MapDistance[5] = 0;
     MapDirection[5] = LEFT_45; 
-    MapDistance[6] = 20;
+    MapDistance[6] = 15;
     MapDirection[6] = FORWARD; 
     MapDistance[7] = 5;
     MapDirection[7] = FORWARD; 
-    MapDistance[8] = 10;
+    MapDistance[8] = 5;
     MapDirection[8] = FORWARD; 
     MapDistance[9] = 0;
     MapDirection[9] = LEFT_45;     
-    MapDistance[10] = 36;
+    MapDistance[10] = 35;
     MapDirection[10] = FORWARD;  
     MapDistance[11] = 0;
     MapDirection[11] = RIGHT_90; 
-    MapDistance[12] = 40;
+    MapDistance[12] = 29;
     MapDirection[12] = FORWARD;  
     MapDistance[13] = 0;
     MapDirection[13] = RIGHT_90;     
-    MapDistance[14] = 36;
+    MapDistance[14] = 25;
     MapDirection[14] = FORWARD; 
     MapDistance[15] = 0;     
     MapDirection[15] = RIGHT_90; 
-    MapDistance[16] = 50;
+    MapDistance[16] = 45;
     MapDirection[16] = FORWARD; 
     MapDistance[17] = 0;
     MapDirection[17] = LEFT_90;          
@@ -612,46 +621,66 @@ uint16 PI( uint16 ActualEncoder, uint16 TrgtEncoder, uint8 Motor )
 // Return:      void
 //
 //****************************************************************************
-void SetSpeed( uint32 Speed )
+void SetSpeed( uint32 Spd )
 {
-    switch(Speed)
+    AdjustSpeedFlag = 0;
+    switch(Spd)
     {
         case(OFF):
             MotorSpeedCtrl( 0, 0 );                             
             TargetEncoder = 0;  
-            Speed = OFF;
+            CurrSpeed = OFF;
             MaxPWM = 0;
             MinPWM = 0;            
             break;
         case(SUPER_SLOW):
-            MotorSpeedCtrl( SUPER_SLOW_SPEED_INIT, SUPER_SLOW_SPEED_INIT+40 );                            
+            MotorSpeedCtrl( M1_SSlow, M2_SSlow );                            
             TargetEncoder = SUPER_SLOW_SPEED;
-            MaxPWM = SUPER_SLOW_SPEED_INIT + 150;
-            MinPWM = SUPER_SLOW_SPEED_INIT - 150;        
+            MaxPWM = M1_SSlow + 150;
+            MinPWM = M1_SSlow - 150;        
             SpeedCheck = SUPER_SLOW_SPEED_CHK;
-            Speed = SUPER_SLOW;            
+            CurrSpeed = SUPER_SLOW;            
             break;            
         case(SLOW):
-            MotorSpeedCtrl( SLOW_SPEED_INIT, SLOW_SPEED_INIT+40 );  
+            MotorSpeedCtrl( M1_Slow, M2_Slow );  
 //            MotorSpeedCtrl( 0, SLOW_SPEED_INIT );  
             TargetEncoder = SLOW_SPEED;   
-            MaxPWM = SLOW_SPEED_INIT + 150;
-            MinPWM = SLOW_SPEED_INIT - 150;  
+            MaxPWM = M1_Slow + 150;
+            MinPWM = M1_Slow - 150;  
             SpeedCheck = SLOW_SPEED_CHK;            
-            Speed = SLOW;
+            CurrSpeed = SLOW;
             break;
         case(MED):
-            MotorSpeedCtrl( MED_SPEED_INIT, MED_SPEED_INIT+30 );                            
+            MotorSpeedCtrl( M1_Med, M2_Med );                            
             TargetEncoder = MED_SPEED; 
-            MaxPWM = MED_SPEED_INIT + 150;
-            MinPWM = MED_SPEED_INIT - 150;    
+            MaxPWM = M1_Med + 150;
+            MinPWM = M1_Med - 150;    
             SpeedCheck = MED_SPEED_CHK;                        
-            Speed = MED;            
+            CurrSpeed = MED;            
             break;
         default:
             MotorSpeedCtrl( 0, 0 );                             
             TargetEncoder = 0;
-            Speed = OFF;            
+            CurrSpeed = OFF;            
+            break;            
+    }
+}
+
+void SaveCurrEnc( void )
+{
+    switch (CurrSpeed)
+    {
+        case(SUPER_SLOW):
+            M1_SSlow = OC4RS;
+            M2_SSlow = OC2RS;
+            break;
+        case(SLOW):
+            M1_Slow = OC4RS;
+            M2_Slow = OC2RS;            
+            break;            
+        case(MED):
+            M1_Med = OC4RS;
+            M2_Med = OC2RS;            
             break;            
     }
 }
@@ -666,8 +695,10 @@ void SetSpeed( uint32 Speed )
 // Return:      void
 //              can be simplified
 //****************************************************************************
-void SetDirection( uint32 Direction)
+void SetDirection( uint32 Direction )
 {
+    uint8 TurnVar = 0;
+    
     switch(Direction)
     {
         case(FORWARD):
@@ -680,112 +711,100 @@ void SetDirection( uint32 Direction)
                 MotorDirectionCtrl( RVS, RVS );   
                 TurnFlag = 0;                
             break;  
-        case(STALL_M1):
-//                MotorSpeedCtrl( 0, SLOW_SPEED_INIT );   
-            
+        case(STALL_M1):      
                 MotorDirectionCtrl( STLL, IGN );   
             break;              
-        case(STALL_M2):
-//                MotorSpeedCtrl( SLOW_SPEED_INIT, 0 );   
-            
+        case(STALL_M2):       
                 MotorDirectionCtrl( IGN, STLL );   
             break;              
         case(LEFT_45):
                 MotorDirectionCtrl( FWD, RVS );  
-                M1Distance = 0;
-                M2Distance = 0;    
-                M1PosEdgeCnt = 0;    
-                M2PosEdgeCnt = 0;  
-                FwdTurnDone = 0;
-                RvsTurnDone = 0;
+
                 FwdTurnCheck = MOTOR_1;                                 
-                FwdTurnCnt = LEFT_45_TURN_FWD;
-                RvsTurnCnt = LEFT_45_TURN_RVS;                
-                TurnFlag = 1;                
+                FwdTurnCnt = TURN_45_ENC;
+                RvsTurnCnt = TURN_45_ENC;                
+                TurnFlag = 1;
+                TurnVar = 1;                
             break;
         case(RIGHT_45):
                 MotorDirectionCtrl( RVS, FWD ); 
-                M1Distance = 0; 
-                M2Distance = 0;   
-                M1PosEdgeCnt = 0;   
-                M2PosEdgeCnt = 0; 
-                FwdTurnDone = 0;                
-                RvsTurnDone = 0;
+
                 FwdTurnCheck = MOTOR_2;                                                   
-                FwdTurnCnt = RIGHT_45_TURN_FWD;
-                RvsTurnCnt = RIGHT_45_TURN_RVS;                
+                FwdTurnCnt = TURN_45_ENC;
+                RvsTurnCnt = TURN_45_ENC;                
                 TurnFlag = 1;                
+                TurnVar = 1;                
             break;
         case(LEFT_90):
                 MotorDirectionCtrl( FWD, RVS );  
-                M1Distance = 0;
-                M2Distance = 0;    
-                M1PosEdgeCnt = 0;    
-                M2PosEdgeCnt = 0;  
-                FwdTurnDone = 0;
-                RvsTurnDone = 0;
+
                 FwdTurnCheck = MOTOR_1;                                 
-                FwdTurnCnt = LEFT_TURN_FWD;
-                RvsTurnCnt = LEFT_TURN_RVS;                
+                FwdTurnCnt = TURN_90_ENC;
+                RvsTurnCnt = TURN_90_ENC;                
                 TurnFlag = 1;                
+                TurnVar = 1;                
             break;
         case(RIGHT_90):
                 MotorDirectionCtrl( RVS, FWD ); 
-                M1Distance = 0; 
-                M2Distance = 0;   
-                M1PosEdgeCnt = 0;   
-                M2PosEdgeCnt = 0; 
-                FwdTurnDone = 0;                
-                RvsTurnDone = 0;
+
                 FwdTurnCheck = MOTOR_2;                                                   
-                FwdTurnCnt = RIGHT_TURN_FWD;
-                RvsTurnCnt = RIGHT_TURN_RVS;                
+                FwdTurnCnt = TURN_90_ENC;
+                RvsTurnCnt = TURN_90_ENC;                
                 TurnFlag = 1;                
+                TurnVar = 1;                
             break;
         case(TURN_180):
                 MotorDirectionCtrl( RVS, FWD ); 
-                M1Distance = 0;   
-                M2Distance = 0;     
-                M1PosEdgeCnt = 0;    
-                M2PosEdgeCnt = 0;
-                FwdTurnDone = 0;                
-                RvsTurnDone = 0;
-                FwdTurnCheck = MOTOR_1;                                            
-                FwdTurnCnt = FULL_TURN_FWD;
-                RvsTurnCnt = FULL_TURN_RVS;               
+
+                FwdTurnCheck = MOTOR_2;                                            
+                FwdTurnCnt = TURN_180_ENC;
+                RvsTurnCnt = TURN_180_ENC;               
                 TurnFlag = 1;               
+                TurnVar = 1;                
             break;
         case(LEFT_SCAN):
                 MotorDirectionCtrl( FWD, RVS );  
-                M1Distance = 0;
-                M2Distance = 0;    
-                M1PosEdgeCnt = 0;    
-                M2PosEdgeCnt = 0;  
-                FwdTurnDone = 0;
-                RvsTurnDone = 0;
+
                 FwdTurnCheck = MOTOR_1;                                 
-                FwdTurnCnt = SCAN_FWD;
-                RvsTurnCnt = SCAN_RVS;                
+                FwdTurnCnt = TURN_SCAN_ENC;
+                RvsTurnCnt = TURN_SCAN_ENC;                
                 TurnFlag = 1;                          
+                TurnVar = 1;                
             break;
         case(RIGHT_SCAN):
                 MotorDirectionCtrl( RVS, FWD ); 
-                M1Distance = 0; 
-                M2Distance = 0;   
-                M1PosEdgeCnt = 0;   
-                M2PosEdgeCnt = 0; 
-                FwdTurnDone = 0;                
-                RvsTurnDone = 0;
+
                 FwdTurnCheck = MOTOR_2;                                                   
-                FwdTurnCnt = SCAN_FWD;
-                RvsTurnCnt = SCAN_RVS;                
+                FwdTurnCnt = TURN_SCAN_ENC;
+                RvsTurnCnt = TURN_SCAN_ENC;                
                 TurnFlag = 1;            
+                TurnVar = 1;                
             break;        
         default:
                 MotorDirectionCtrl( FWD, FWD );
                 TurnFlag = 0;         
             break;            
     }    
+    
+    if ( TurnVar != 0 )
+    {
+//        M2_SSlow = ( FwdTurnCheck == MOTOR_1 )? M2_SSlow : M2_SSlow-100;       
+//        M2_Slow = ( FwdTurnCheck == MOTOR_1 )? M2_Slow : M2_Slow-100;       
+//        M2_Med = ( FwdTurnCheck == MOTOR_1 )? M2_Med : M2_Med-100;       
+//        M1_SSlow = ( FwdTurnCheck != MOTOR_1 )? M1_SSlow : M1_SSlow-100;       
+//        M1_Slow = ( FwdTurnCheck != MOTOR_1 )? M1_Slow : M1_Slow-100;       
+//        M1_Med = ( FwdTurnCheck != MOTOR_1 )? M1_Med : M1_Med-100;             
+        
+        M1Distance = 0;
+        M2Distance = 0;    
+        M1PosEdgeCnt = 0;    
+        M2PosEdgeCnt = 0;  
+        FwdTurnDone = 0;
+        RvsTurnDone = 0;        
+         
+        TurnFlag = 1;                            
+    }        
+       
 }
 
 uint8 CheckFlameDetectors() 
@@ -800,7 +819,7 @@ uint8 CheckFlameDetectors()
     
     for (i = 1; i < 5; i++)
     {       
-        if (FlameSens[i] > 30)
+        if (FlameSens[i] > 14)
         {
             FlameDetected = 1;
         }            
@@ -843,13 +862,25 @@ void CheckMap()
         
         MapIndex++;
         dir = MapDirection[MapIndex];
-        if (MapIndex < MAP_MAX)
+        
+//        if ( MapIndex == 0 )
+//        {
+//            WallFollowing  = 1;
+//        } 
+//        else
+//        {
+//            WallFollowing  = 0; 
+//        }
+            
+        if ( MapIndex < MAP_MAX )
         {
             if ( MapDirection[MapIndex] != FORWARD &&  MapDirection[MapIndex] != REVERSE && MapDirection[MapIndex] != DIR_OFF )
             {
+                SaveCurrEnc();               
                 SetDirection( MapDirection[MapIndex] );
                 NextDir = MapDirection[MapIndex+1];  
-                NextSpeed = SLOW;              
+                NextSpeed = SLOW;       
+//                WallFollowing = 0;
             }
             else 
             {
@@ -863,7 +894,7 @@ void CheckMap()
             SetDirection( STALL_M1 );
             SetDirection( STALL_M2 );
             SetSpeed( OFF );           
-            
+//            WallFollowing = 0;
             MapDone = 1;
         }      
     }
@@ -876,15 +907,15 @@ void CheckFrontSensor()
     if (USSensDiff < 1063 && TurnFlag == 0)
     {
        TurnDir = CheckCollisionSensors();
-       if ( TurnDir == NO_COLLISION )
-       {
-           TurnDir = LEFT_90;
-       }
+//       if ( TurnDir == NO_COLLISION )
+//       {
+//           TurnDir = LEFT_90;
+//       }
 //       SetSpeed( SUPER_SLOW );
        
        SetDirection( TurnDir ); 
        NextDir = FORWARD;
-       NextSpeed = SLOW;
+       NextSpeed = CurrSpeed;
 
        UnMappedTurn++;
     }     
@@ -901,7 +932,7 @@ void CheckFrontSensor()
 uint32 CheckCollisionSensors()
 {
     uint32 Collision;
-    Collision = NO_COLLISION;
+    Collision = LEFT_90;
     
     if ( (IRSens[0] > 750) || (IRSens[1] > 750) ) // Left Sensors
     {
@@ -951,19 +982,33 @@ uint8 ShootWater()
 uint8 FireVerifyTemp()
 {
     uint8 fireDetected = 0;
-    float temp = 0;
-    
+//    float temp = 0;
+    uint8 s1 = 0;
+    uint8 s2 = 0;
+    uint8 s3 = 0;
+
     // add functions from other project
-//    I2C1Start();  
-//    I2C1Send((MLX90614_I2CADDR<<1) & 0xFE);             
-//    I2C1Send(MLX90614_TOBJ & 0xFF);             
-//    I2C1Restart();      
-//    I2C1Send((MLX90614_I2CADDR<<1) | 0x01);    
-//    temp = readTemp();  
-////        a++;                   
-//    I2C1Stop();     
+    I2C2Start();  
+    if (I2C2Send((MLX90614_I2CADDR<<1) & 0xFE) == 0)     
+    {
+        s1 = 1;
+        if ( I2C2Send(MLX90614_TOBJ & 0xFF) == 0 )
+        {
+            s2 = 1;
+            I2C2Restart();      
+            if ( I2C2Send((MLX90614_I2CADDR<<1) | 0x01) == 0 )    
+            {
+                tmpta = readTemp();  
+            
+//        a++;    
    
-    if (temp > 79)
+                I2C2Stop(); 
+                s3 = 1;
+                
+            }
+        }
+    }
+    if (tmpta > 79)
     {
         fireDetected = 1;
     }
@@ -993,8 +1038,8 @@ uint8 CheckWalls()
     uint16 thrsh;
     uint16 nthrsh;
     
-    thrsh = 12;
-    nthrsh = 12;    
+    thrsh = 8;
+    nthrsh = 8;    
     RBTemp = IRSens[2];
     RFTemp = IRSens[3];
     // thrsh    clsr
@@ -1008,43 +1053,43 @@ uint8 CheckWalls()
     if (RFChng > thrsh)
     {
         RFState = INC;     
-        M1Wall = RFChng/thrsh;        
+        M2Wall = RFChng/thrsh;        
     }
     else if (RFChng < -thrsh)
     {
         RFState = DEC; 
-        M1Wall = -(RFChng/thrsh);       
+        M2Wall = -(RFChng/thrsh);       
     }    
     else
     {
         AdjustWall = 0;        
         RFState = STEADY;   
-        M1Wall = 0;
+        M2Wall = 0;
     }       
     
     if (RBChng > nthrsh)
     {
         RBState = INC; 
-        M2Wall = RFChng/nthrsh; 
-//        if (RFState == INC)
-//        {
-//            M2Wall = -M2Wall;              
-//        }
+        M1Wall = RFChng/nthrsh; 
+        if (RFState == INC)
+        {
+            M1Wall = -M1Wall;              
+        }
     }
     else if (RBChng < -nthrsh)
     {
         RBState = DEC;  
-        M2Wall = -(RFChng/nthrsh);  
-//        if (RFState == DEC)
-//        {
-//            M2Wall = -M2Wall;              
-//        }        
+        M1Wall = -(RFChng/nthrsh);  
+        if (RFState == DEC)
+        {
+            M1Wall = -M1Wall;              
+        }        
     }    
     else
     {
         AdjustWall = 0;        
         RBState = STEADY;  
-        M2Wall = 0;        
+        M1Wall = 0;        
     }
         
     return AdjustWall;    
@@ -1135,3 +1180,133 @@ uint8 CheckForDoor(uint8 Side)
     }    
     return DoorCheck;
 }
+
+
+///I2C2
+float readTemp()
+{
+  float tempCalc = 0;
+  
+  I2C2CONbits.ACKDT = 0;    
+  tempBuffLo = I2C2Read();
+  
+  I2C2CONbits.ACKDT = 0;  
+  tempBuffHi = I2C2Read();
+  
+  I2C2CONbits.ACKDT = 1;
+  CRCBuff = I2C2Read();
+
+  
+  temp16 = (tempBuffHi << 8) | tempBuffLo;
+  tempCalc = temp16 * 0.02;
+  tempCalc  -= 273.15;    
+  tempCalc = tempCalc * 9.0 / 5.0 + 32;
+  return tempCalc;
+}
+
+void I2C2Init(int BRG)
+{
+    IPC9bits.I2C2IP = 3;
+    IFS1bits.I2C2MIF = 0;
+    IFS1bits.I2C2BIF = 0;  
+    IFS1bits.I2C2SIF = 0;  
+    IEC1bits.I2C2MIE = 1;      
+    IEC1bits.I2C2BIE = 1;  
+    IEC1bits.I2C2SIE = 1;  
+    
+    I2C2BRG = BRG;
+    I2C2CONbits.DISSLW = 1;    
+    I2C2CONbits.I2CEN = 1;
+
+    cnt = 1;
+    while ( cnt <= 16000 );
+    cnt = 0;
+    
+    I2C2Stop();
+}
+
+void I2C2Stop()
+{
+	I2C2CONbits.PEN = 1;         /* Stop condition enabled */
+	while(I2C2CONbits.PEN);      /* Wait for stop condition to finish */
+    BusColision();
+    I2C2CONbits.RCEN = 0;
+    
+//    cnt = 1;
+//    while ( cnt <= 500 );
+//    cnt = 0;
+}
+
+void I2C2Start()
+{
+    I2C2CONbits.ACKDT = 0;
+    while(I2C2STATbits.P == 0);
+	I2C2CONbits.SEN = 1;         /* Start condition enabled */
+	while(I2C2CONbits.SEN);      /* automatically cleared by hardware */
+    
+    BusColision();               /* wait for start condition to finish */
+}
+
+void I2C2Restart()
+{
+    I2C2Idle();
+	I2C2CONbits.RSEN = 1;        /* Repeated start enabled */
+	while(I2C2CONbits.RSEN);     /* wait for condition to finish */
+    BusColision();
+}
+
+uint8 I2C2Send(uint8 addr)
+{	      
+    while(I2C2STATbits.S == 0);
+    
+    I2C2TRN = addr;  
+    while(I2C2STATbits.TBF != 0); 
+    while (I2C2STATbits.TRSTAT != 0);
+    BusColision();
+	
+    if(I2C2STATbits.ACKSTAT != 0)
+    {             
+//        acks++;
+//    }
+//    else
+//    {
+        I2C2Stop();
+        return 1;
+//        
+//        nacks++;
+        
+    }
+    return 0;
+}
+
+uint8 I2C2Read(void)
+{
+	int temp;
+    I2C2Idle();
+	I2C2CONbits.RCEN = 1;         
+	while(I2C2CONbits.RCEN != 0);   
+    
+    I2C2Idle();
+    BusColision();
+	temp = I2C2RCV;   
+    I2C2CONbits.ACKEN = 1;
+	while(I2C2CONbits.ACKEN != 0);   
+   
+	return temp;                  
+}
+
+void I2C2Idle(void)
+{
+    while ((I2C2CONbits.ACKEN != 0) || (I2C2CONbits.RCEN != 0) 
+            || (I2C2CONbits.PEN != 0) || (I2C2CONbits.RSEN != 0) 
+            || (I2C2CONbits.SEN != 0) );
+    
+}
+ void BusColision(void)
+ {
+ 	if(I2C2STATbits.BCL || I2C2STATbits.IWCOL)
+     {         
+        I2C2STATbits.BCL = 0;
+        I2C2STATbits.IWCOL = 0;
+     }
+ }
