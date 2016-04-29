@@ -107,8 +107,9 @@ void main(void)
 //                    if (PORTAbits.RA8 == 0)
 //                    {
 //                        Mode = MODE_2;
-                        State = START;
-                        SecCnt = 3;
+                        State = FIRE_EXTINGUISH;
+                        Extinguish = 1;
+//                        SecCnt = 3;
 //                        while(PORTAbits.RA8 == 0);
 //                    }              
 //                }                     
@@ -186,20 +187,20 @@ void main(void)
                     
                     CheckWalls();   
                     
-                    if (xin < 6500)
-                    {                     
-                        RB_s[xin] = M1Wall;                        
-                        RF_s[xin] = M2Wall;                          
-                        xin++;
+//                    if (xin < 6500)
+//                    {                     
+//                        RB_s[xin] = M1Wall;                        
+//                        RF_s[xin] = M2Wall;                          
+//                        xin++;
                     
  
 //                        xin = 0;
 //                        l++;
-                    }   
-                    else 
-                    {
-                        xin = 0;
-                    }
+//                    }   
+//                    else 
+//                    {
+//                        xin = 0;
+//                    }
 ////                    if (l >= 10)
 ////                    {
 ////                        l = 0;
@@ -273,46 +274,8 @@ void main(void)
 //                    }
                     else if ( FlameSens[CENTER_FLAME] < 120 ) //smaller if too close and larger if to far
                     {
-//                        sens[ss] = FlameSens[CntrFlame];
-//                        sens1[ss] = FlameSens[1];
-//                        sens2[ss] = FlameSens[0];
-//                        
-//                        csens[ss] = CENTER_FLAME;
-                        ss++;
-                        if (ss>800)
-                        {
-                           ss = 0;
-                        }    
-                        
-                        if (incCnt++ < 5)
-                        {
-                            SetSpeed( SUPER_SLOW );
-                            SetDirection( FORWARD );
-                        }
-                        else if ((inc - FlameSens[CntrFlame]) > 3 )
-                        {
-                            SetDirection( STALL_M1 );
-                            SetDirection( STALL_M2 );                            
-                            if (ScRight != 0)
-                            {
-                                SetDirection( RIGHT_SCAN ); 
-                            }
-                            if (ScLeft != 0)
-                            {
-                                SetDirection( LEFT_SCAN ); 
-                            }
-
-                            SetSpeed( SUPER_SLOW );
-                            NextDir = FORWARD;  
-                            NextSpeed = OFF;                              
-                            
-                            incCnt = 0;
-                        }
-                        else
-                        {
-                            inc = FlameSens[CntrFlame];
-                            incCnt = 0;
-                        }
+                        SetSpeed( SUPER_SLOW );
+                        SetDirection( FORWARD );                      
                     }
                     else
                     {
@@ -322,7 +285,7 @@ void main(void)
                         TurnFlag = 0;
                         ScLeft = 0;
                         ScRight = 0;
-                        I2C2Init(145); 
+//                        I2C2Init(145); 
                         
                         
                          //needed for decoycheck
@@ -333,7 +296,8 @@ void main(void)
 
 //                        State = NAVIGATE;                        
                         
-                        State = FIRE_VERIFY;
+//                        State = FIRE_VERIFY;
+                        State = FIRE_EXTINGUISH;
                    
                     }
 
@@ -397,14 +361,14 @@ void main(void)
                     // 100ms pulse to solenoid
                     if ( ShootWater() != 0 )
                     {
-                        if ( FireVerifyTemp() == 0 )
-                        {
+//                        if ( FireVerifyTemp() == 0 )
+//                        {
                             Extinguish = 0;
-                        }
-                        else
-                        {
-                            WaterPulse = 1;
-                        }
+//                        }
+//                        else
+//                        {
+//                            WaterPulse = 1;
+//                        }
                     }
                 }       
                 

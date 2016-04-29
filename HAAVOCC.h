@@ -61,7 +61,7 @@ typedef signed int sint32;
 //#define SCAN_FWD                20
 
 #define CENTER_FLAME     2
-#define MAP_MAX          1 //62
+#define MAP_MAX          62
 
 #define MLX90614_I2CADDR    0x5A
 
