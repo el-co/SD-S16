@@ -37,7 +37,7 @@ void main(void)
     LATAbits.LATA7 = 0;     //
     LATBbits.LATB9 = 0;     //
     LATAbits.LATA10 = 0;    //
-    LATCbits.LATC8 = 0;     //
+    LATCbits.LATC8 = 0;     //bottom
     
     //solenoid
     LATCbits.LATC4 = 0;
@@ -66,7 +66,6 @@ void main(void)
     UnMappedTurn = 0;
     WaterPulseCnt = 0;
     
-    
     RCONbits.BOR = 0;
     RCONbits.POR = 0;
     
@@ -75,6 +74,8 @@ void main(void)
 //    WallFollowing = 0;
     cnt = 0; 
     ss = 0;
+    Scan180 = 0;
+    FireCll = 0;
 //    sD = 0;
     while(1)
     { 
@@ -107,9 +108,9 @@ void main(void)
 //                    if (PORTAbits.RA8 == 0)
 //                    {
 //                        Mode = MODE_2;
-                        State = FIRE_EXTINGUISH;
-                        Extinguish = 1;
-//                        SecCnt = 3;
+                        State = START;
+//                        Extinguish = 1;
+                        SecCnt = 3;
 //                        while(PORTAbits.RA8 == 0);
 //                    }              
 //                }                     
@@ -149,6 +150,8 @@ void main(void)
             case NAVIGATE:
                 // 	Use map to navigate
                 State = NAVIGATE; 
+                LATCbits.LATC8 = 0;     //
+
                 // uncomment to follow map
                 if (MapDone == 0)
                 { 
@@ -212,15 +215,17 @@ void main(void)
 //                    CheckCollisionSensors();    
 
                     /////// COMMENT OUT IF FIRE SENSORS NOT CONNECTED
-//                    if ( CheckFlameDetectors() != 0 )  
-//                    {
-//                        SetSpeed( OFF );      
-//                        ScLeft = 0;
-//                        ScRight = 0;
-//                        inc =0;
-//                        State = FIRE_DETECTED;
-////                        State = FIRE_VERIFY;
-//                    }
+                    if ( CheckFlameDetectors() != 0 )  
+                    {
+                        SetSpeed( OFF );      
+                        ScLeft = 0;
+                        ScRight = 0;
+                        inc =0;
+                        SetDirection( STALL_M1 );
+                        SetDirection( STALL_M2 );                        
+                        State = FIRE_DETECTED;
+//                        State = FIRE_VERIFY;
+                    }
 //                   ///////////////////////////////////////////////// 
                                    
                     SensorEvalFlag = 0;
@@ -228,9 +233,24 @@ void main(void)
 
                 break;
             case FIRE_DETECTED:
+                    LATCbits.LATC8 = 1;     //
+
                 // Navigate to location
                 // Keep track of reroute
 //                ReRoute();
+                    
+//                if (USSensorFlag != 0)
+//                {
+//                    FireCll = CheckFrontSensor();
+//                    if (FireCll != 0)
+//                    {
+//                        SetDirection( STALL_M1 );
+//                        SetDirection( STALL_M2 );
+//                        USSensorFlag = 0;                        
+//                    }
+//                    USSensorFlag = 0;
+//                }                    
+                    
                 // Use IR photo sensors (ADC) to center flame source
                 if ( SensorEvalFlag != 0 )
                 {                                   
@@ -257,23 +277,12 @@ void main(void)
                         NextSpeed = OFF; 
                         inc = FlameSens[CENTER_FLAME];
                     }
-//                    else if ( FlameSens[CENTER_FLAME] < 20 )
-//                    {
-//                        if (ScRight != 0)
-//                        {
-//                            SetDirection( RIGHT_SCAN ); 
-//                        }
-//                        if (ScLeft != 0)
-//                        {
-//                            SetDirection( LEFT_SCAN ); 
-//                        }
-//                        
-//                        SetSpeed( SUPER_SLOW );
-//                        NextDir = FORWARD;  
-//                        NextSpeed = OFF;   
-//                    }
                     else if ( FlameSens[CENTER_FLAME] < 120 ) //smaller if too close and larger if to far
                     {
+//                        SetDirection( STALL_M1 );
+//                        SetDirection( STALL_M2 );   
+                        ScLeft = 0;                            
+                        ScRight = 0;                        
                         SetSpeed( SUPER_SLOW );
                         SetDirection( FORWARD );                      
                     }
@@ -297,10 +306,9 @@ void main(void)
 //                        State = NAVIGATE;                        
                         
 //                        State = FIRE_VERIFY;
-                        State = FIRE_EXTINGUISH;
-                   
+                        Extinguish = 1;
+                        State = FIRE_EXTINGUISH;                  
                     }
-
 
                     SensorEvalFlag = 0;
                 }
@@ -356,8 +364,9 @@ void main(void)
                 
                 // 100ms pulse to solenoid
                 // check fire temp to verify fire extinguished
-                if (Extinguish != 0)
-                {                
+                if ( Extinguish != 0 )
+                {       
+                    WaterPulse = 1;
                     // 100ms pulse to solenoid
                     if ( ShootWater() != 0 )
                     {
@@ -617,7 +626,7 @@ void __ISR (16, IPL2SOFT) Timer4IntHandler(void)
 //    {
 //        SetSpeed( SLOW );                    
 //    }  
-    LATCbits.LATC8 = 0;     //
+//    LATCbits.LATC8 = 0;     //
     
 //    if (WallFollowing != 0)
 //    {

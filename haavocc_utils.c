@@ -848,7 +848,17 @@ uint32 CenterFlame()
             
         }            
     }
-
+    if (ActualCenter == CENTER_FLAME)
+    {
+        if ( FlameSens[3] - FlameSens[1] > 2 )
+        {
+          ActualCenter = 3;  
+        }
+        if ( FlameSens[1] - FlameSens[3] > 2 )
+        {
+          ActualCenter = 1;  
+        }
+    }
    return ActualCenter;
 }
 
@@ -900,24 +910,28 @@ void CheckMap()
     }
 }
 
-void CheckFrontSensor()
+uint8 CheckFrontSensor()
 {
     uint32 TurnDir; 
-       
-    if (USSensDiff < 1063 && TurnFlag == 0)
+    uint8 Cllisn = 0;   
+    if ( USSensDiff < 1063 )
     {
-       TurnDir = CheckCollisionSensors();
-//       if ( TurnDir == NO_COLLISION )
-//       {
-//           TurnDir = LEFT_90;
-//       }
-//       SetSpeed( SUPER_SLOW );
-       
-       SetDirection( TurnDir ); 
-       NextDir = FORWARD;
-       NextSpeed = CurrSpeed;
+        Cllisn = 1;
+        if ( State != FIRE_DETECTED && TurnFlag == 0)
+        {
+            TurnDir = CheckCollisionSensors();
+     //       if ( TurnDir == NO_COLLISION )
+     //       {
+     //           TurnDir = LEFT_90;
+     //       }
+     //       SetSpeed( SUPER_SLOW );
 
-       UnMappedTurn++;
+            SetDirection( TurnDir ); 
+            NextDir = FORWARD;
+            NextSpeed = CurrSpeed;
+
+            UnMappedTurn++;
+        }
     }     
     
     // testing
@@ -927,6 +941,7 @@ void CheckFrontSensor()
 //    {
 //       USInd = 0;
 //    }   
+    return Cllisn;
 }
 
 uint32 CheckCollisionSensors()
@@ -969,11 +984,13 @@ uint8 ShootWater()
     // 100 ms pulse    
     if ( WaterPulse == 0 )
     {
+        LATCbits.LATC8 = 0;     
         LATCbits.LATC4 = 0;        
         plseDne = 1;
     }
     else
     {
+        LATCbits.LATC8 = 1;       
         LATCbits.LATC4 = 1;
     }
     return plseDne;

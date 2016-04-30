@@ -108,7 +108,7 @@ uint8 ShootWater();
 uint8 FireVerifyTemp();
 uint8 DecoyCheck();
 uint8 FireVerifySens();
-void CheckFrontSensor();
+uint8 CheckFrontSensor();
 uint8 CheckWalls();
 uint8 CheckForDoor( uint8 Side );
 
@@ -179,6 +179,7 @@ enum DIRECTION
     TURN_180,
     LEFT_SCAN,
     RIGHT_SCAN,
+    SCAN_180,
     DIR_OFF        
 };
 
@@ -398,5 +399,7 @@ uint8 WallFollowing;
 uint16 ss;
 uint32 inc;
 uint32 incCnt;
+uint8 FireCll;
 
+uint8 Scan180;
 #endif	/* HAVVOCC_H */
