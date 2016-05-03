@@ -36,37 +36,20 @@ typedef signed int sint32;
 #define SLOW_SPEED_CHK          140
 #define SUPER_SLOW_SPEED_CHK    105
 
+#define TURN_30_ENC             60
 #define TURN_45_ENC             320
 #define TURN_90_ENC             695
 #define TURN_180_ENC            1415
 #define TURN_SCAN_ENC           20
 
-
-//#define RIGHT_45_TURN_RVS       320 // inc to to turn more, dec to turn less
-//#define RIGHT_45_TURN_FWD       320 // change both rvs and fwd to match
-//
-//#define LEFT_45_TURN_RVS        320 
-//#define LEFT_45_TURN_FWD        320   
-//
-//#define RIGHT_TURN_RVS          695
-//#define RIGHT_TURN_FWD          695
-//
-//#define LEFT_TURN_RVS           695
-//#define LEFT_TURN_FWD           695
-//
-//#define FULL_TURN_RVS           1415
-//#define FULL_TURN_FWD           1415
-//
-//#define SCAN_RVS                20
-//#define SCAN_FWD                20
-
 #define CENTER_FLAME     2
-#define MAP_MAX          62
+#define MAP_MAX          37
+#define REROUTE_MAX      3
 
 #define MLX90614_I2CADDR    0x5A
 
 #define MLX90614_TA         0x06
-#define MLX90614_TOBJ      0x07
+#define MLX90614_TOBJ       0x07
 //****************************************************************************
 //
 //
@@ -96,31 +79,22 @@ void I2C2Init(int BRG);
 void MotorSpeedCtrl( uint32 LSpeed, uint32 RSpeed );
 void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection);
 uint16 PI( uint16 ActualEncoder, uint16 TargetEncoder, uint8 Motor );
-void SetSpeed( uint32 Spd);
+void SetSpeed( uint32 Spd );
 void SaveCurrEnc( void );
-void SetDirection( uint32 Direction);
+void SetDirection( uint32 Direction );
 uint8 CheckFlameDetectors();
 uint32 CenterFlame();
 void CheckMap();
 uint32 CheckCollisionSensors();
-uint8 ReRoute();
+void ReRoute();
 uint8 ShootWater();
-uint8 FireVerifyTemp();
 uint8 DecoyCheck();
 uint8 FireVerifySens();
 uint8 CheckFrontSensor();
-uint8 CheckWalls();
-uint8 CheckForDoor( uint8 Side );
+void CheckWalls(uint8 Side);
+void CheckForDoor();
+void SetReRouteTurn(uint8 TurnSide, uint32 TurnEnc);
 
-//I2C2
-float readTemp();
-void I2C2Stop();
-void I2C2Start();
-void I2C2Restart();
-uint8 I2C2Send(uint8 addr);
-uint8 I2C2Read(void);
-void BusColision(void);
-void I2C2Idle(void);
 
 //****************************************************************************
 // 
@@ -154,8 +128,8 @@ enum WALL_SENSOR
 
 enum SENSOR_SIDE
 {
-    LEFT_SIDE,
-    RIGHT_SIDE
+    LEFT_SIDE = 0,
+    RIGHT_SIDE = 1,
 };
 
 enum SPEEDS
@@ -171,7 +145,9 @@ enum DIRECTION
     FORWARD,
     REVERSE,
     STALL_M1,
-    STALL_M2,  
+    STALL_M2,     
+    LEFT_30,
+    RIGHT_30,  
     LEFT_45,
     RIGHT_45,
     LEFT_90,
@@ -179,7 +155,8 @@ enum DIRECTION
     TURN_180,
     LEFT_SCAN,
     RIGHT_SCAN,
-    SCAN_180,
+    LEFT_RRT,
+    RIGHT_RRT,
     DIR_OFF        
 };
 
@@ -197,20 +174,26 @@ enum MOTORS
     MOTOR_2 = 1
 };
 
-enum IR_DETECT
+enum HLLWY
 {
-    STEADY,
-    INC,
-    DEC
+    ONE_BLK = 2,
+    TWO_BLK = 1,
+    TRD_BLK = 0
 };
 
-enum WALL_DETECT
+enum RROUTE
 {
-    ALGN,       //0 
-    AWAY,       //1
-    CLSR,       //2
-    ALGN_AWAY,  //3
-    ALGN_CLSR   //4
+  LEFT_REROUTE = 1,
+  RIGHT_REROUTE = 2,
+  FWD_REROUTE = 0,
+  DONE = 3
+};
+
+enum FIRE_LOC
+{
+  ROOM = 0,
+  HLLWAY_1 = 1,
+  HLLWAY_2 = 2
 };
 
 //****************************************************************************
@@ -218,7 +201,6 @@ enum WALL_DETECT
 //                              Global Variables
 //
 //****************************************************************************
-//uint8 Map[84][30];
 uint8 State;
 uint8 Mode;
 
@@ -244,6 +226,7 @@ uint16 Motor2Speed;
 uint16 Motor1Speed;
 uint32 TargetEncoder;
 uint8 CurrSpeed;
+uint8 CurrDir;
 
 float M1Integral;
 float M2Integral;
@@ -256,10 +239,14 @@ uint8 FollowingMap;
 uint16 MapIndex;
 uint32 MapDist;
 
+uint16 RRIndex;
+uint32 RRDist;
+uint8 RRCheck;
+
 uint32 CatchUp;
 uint32 Fixed;
-uint32 M1Distance;
-uint32 M2Distance;
+sint32 M1Distance;
+sint32 M2Distance;
 uint32 FwdTurnDist;
 uint8  FwdTurnCheck;
 uint32 RvsTurnDist;
@@ -288,12 +275,8 @@ uint32 tempFwd;
 
 float USSensDiff;
 
-uint32 RBThresh;
-uint32 RFThresh;
-uint32 ThrshCnt;
-
-sint16 M1Wall;
-sint16 M2Wall;
+uint32 BckAvg;
+uint32 FntAvg;
 
 uint32 UnMappedTurn;
 
@@ -308,14 +291,22 @@ uint32 M2_Slow;
 uint32 M1_Med;
 uint32 M2_Med;
 
-//uint32 acks = 0;
-//uint32 nacks = 0;
-uint32 cnt;
-uint8  tempBuffLo;
-uint8  tempBuffHi;
-uint8  CRCBuff; 
-sint16 temp16;
-float tmpta;
+//sint32 SwerveDistance[3];
+//uint8 SwerveDirection[3];
+sint32 RRouteDistance[3];
+uint8 RRouteDirection[3];
+uint32 MInd;
+uint8 MDist;
+uint8 M1Dist;
+uint8 M2Dist;
+
+uint8 CllTurn;
+
+uint16 HllwyUSS[3];
+uint16 HllwyFWD[3];
+uint16 HllwyBCK[3];
+
+uint8 WllChck;
 
 // DEBUG
 uint32 TEST4;
@@ -333,39 +324,16 @@ uint32 SixtnHz;
 uint32 SecCnt;
 
 /// ir sensors
-sint16 RB_s[6500];
-sint16 RF_s[6500];
-sint16 RBPI_s[45];
-sint16 RFPI_s[45];
-uint32 xinp;
 
-//sint16 RB_s[1013];
-//sint16 RF_s[1013];
-//uint16 LB_s[1013];
-//uint16 LF_s[1013];
+uint32 xinp;
 
 uint32 xin;
 
 /// Flame Sensor stuff
-//uint16 FlL[400];
-//uint16 FlLM[2025];
-//sint16 FlM[2025];
-//uint16 FlRM[2025];
-//uint16 FlR[400];
 sint16 flmMidMax;
 sint16 flmMidMin;
 sint16 PrvMidFlame;
 sint16 flMidDif;
-
-sint16 flmLftMax;
-sint16 flmLftMin;
-sint16 PrvLftFlame;
-sint16 flLftDif;
-
-sint16 flmRgtMax;
-sint16 flmRgtMin;
-sint16 PrvRgtFlame;
-sint16 flRgtDif;
 
 uint8 IgnFirst;
 uint32 flcnt;
@@ -373,6 +341,8 @@ uint32 flcn;
 
 uint8 ScLeft;
 uint8 ScRight;
+uint8 ScFwd;
+
 
 uint8 IRCnt;
 uint32 RBState;
@@ -388,18 +358,53 @@ uint8 tf;
 
 uint32 AftTrn;
 
-uint8 WallFollowing;
-
-//uint16 sens[800];
-//uint16 sens1[800];
-//uint16 sens2[800];
-//
-//uint8 csens[800];
-
 uint16 ss;
-uint32 inc;
-uint32 incCnt;
+
 uint8 FireCll;
 
-uint8 Scan180;
+uint32 mmm;
+uint8 RRRtrn;
+uint8 fwd;
+uint32 maxfwd;
+
+float USSens[100];
+uint32 USInd; 
+uint8 RRTurn;
+
+//uint16 MFireSens[2000];
+//uint16 LMFireSens[2000];
+//uint16 RMFireSens[2000];
+//uint16 RFireSens[2000];
+//uint16 LFireSens[2000];
+//uint16 LR[2000];
+
+//uint16 FireSens;
+//
+//uint16 LF[3000];
+//uint16 RF[3000];
+//uint16 LB[3000];
+//uint16 RB[3000];
+uint8 filt;
+
+uint16 Sidx;
+
+
+uint16 WFInitCnt;
+uint16 FntMax;
+uint16 FntMin;
+uint16 BckMax;
+uint16 BckMin;
+uint32 BckAvg;
+uint32 FntAvg;
+
+uint8 WFInit; //
+uint8 WFRun; // CheckWalls
+uint8 DrChck; // CheckForDoor
+uint8 CnslChck; // ConsoleCheck
+//uint8 TurnConsole; // Set in ConsoleCheck
+uint32 WallCheckSide;
+uint8 WallCll;
+uint8 ReturnNav;
+uint32 FireLocation;
+
 #endif	/* HAVVOCC_H */
