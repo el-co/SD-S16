@@ -11,14 +11,14 @@
 
 #include "HAAVOCC.h"
 
-#pragma config FNOSC = FRCPLL
+#pragma config FNOSC    = FRCPLL
 #pragma config FPLLIDIV = DIV_2
-#pragma config FPLLMUL = MUL_20
+#pragma config FPLLMUL  = MUL_20
 #pragma config FPLLODIV = DIV_2
-#pragma config FPBDIV = DIV_1
-#pragma config FSOSCEN = OFF
-#pragma config FWDTEN = OFF
-#pragma config JTAGEN = OFF
+#pragma config FPBDIV   = DIV_1
+#pragma config FSOSCEN  = OFF
+#pragma config FWDTEN   = OFF
+#pragma config JTAGEN   = OFF
 
 // 40MHz Clock
 
@@ -26,16 +26,15 @@ void main( void )
 {
     Init();
  
-    LATCbits.LATC7 = 0;     // PCB LED  
-    LATAbits.LATA7 = 0;     // Left LED
-    LATBbits.LATB9 = 0;     // Right LED
+    LATCbits.LATC7  = 0;    // PCB LED  
+    LATAbits.LATA7  = 0;    // Left LED
+    LATBbits.LATB9  = 0;    // Right LED
     LATAbits.LATA10 = 0;    // Top LED
-    LATCbits.LATC8 = 0;     // Bottom LED
-    
-    LATCbits.LATC4 = 0;     // Solenoid Pin
+    LATCbits.LATC8  = 0;    // Bottom LED
+    LATCbits.LATC4  = 0;    // Solenoid Pin Off
    
-    RCONbits.BOR = 0;       // Clear Brown Out Reset
-    RCONbits.POR = 0;       // Clear Power On Reset
+    RCONbits.BOR    = 0;    // Clear Brown Out Reset
+    RCONbits.POR    = 0;    // Clear Power On Reset
  
     SixtnHzCnt = 0;         // Start Heartbeat
     ClearVariables();       // Clear Variables
@@ -49,8 +48,8 @@ void main( void )
                 LATCbits.LATC8 = 1;
                 if (PORTAbits.RA3 == 0) // BATTLE BUTTON
                 {
-                    DesignDayBtn = 1;
-                    ExtinguishFlag = 1;           
+                    DesignDayBtn    = 1;
+                    ExtinguishFlag  = 1;           
                     State = FIRE_EXTINGUISH;
                     while(PORTAbits.RA3 == 0);
                 }              
@@ -76,10 +75,10 @@ void main( void )
                 if (SecCnt == 0)
                 {                
                     // Reset Reroute values
-                    RRouteDirection[1] = FORWARD;   
-                    RRouteDistance[0] = 0;   
-                    RRouteDistance[1] = 3;   
-                    RRouteDistance[2] = 0;                      
+                    RRouteDirection[1]  = FORWARD;   
+                    RRouteDistance[0]   = 0;   
+                    RRouteDistance[1]   = 3;   
+                    RRouteDistance[2]   = 0;                      
 
                     // Start Map
                     SetSpeed( SLOW );
@@ -113,7 +112,7 @@ void main( void )
                 }
                 else 
                 {
-                    MtrsOffCnt = 0;
+                    MtrsOffCnt  = 0;
                     MtrsOffFlag = 0;
                 }
                 
@@ -155,21 +154,20 @@ void main( void )
     
                     if ( CheckFlameDetectors() != 0 && SecCnt == 0 )  
                     {
-                        SetSpeed( OFF );      
-                        AdjstLeftFlag = 0;
-                        AdjstRightFlag = 0;
-                        AdjstFwdFlag = 0;
+                        SetSpeed( OFF );  
                         SetDirection( STALL_M1 );
-                        SetDirection( STALL_M2 );   
-                        
-                        SecCnt = 60;
-                        State = FIRE_DETECTED;
-                        
+                        SetDirection( STALL_M2 );                       
+                                         
                         //Save for Reroute
-                        SavedMapIndex = MapIndex;
-                        SavedMapDist = MapDist;
-                        SavedM1Dist = M1Distance;
-                        SavedM2Dist = M2Distance;
+                        SavedMapIndex   = MapIndex;
+                        SavedMapDist    = MapDist;
+                        SavedM1Dist     = M1Distance;
+                        SavedM2Dist     = M2Distance;
+
+                        AdjstLeftFlag   = 0;
+                        AdjstRightFlag  = 0;
+                        AdjstFwdFlag    = 0;                        
+                        State   = FIRE_DETECTED;                        
                     }
                                    
                     SensorEvalFlag = 0;
@@ -188,18 +186,18 @@ void main( void )
                     {
                         if ((CntrFlame == 0 || CntrFlame == 1) && AdjstLeftFlag == 0) // Left Sensors
                         {
-                            AdjstFwdFlag = 0;
-                            AdjstLeftFlag = 1;
-                            AdjstRightFlag = 0;                            
+                            AdjstFwdFlag    = 0;
+                            AdjstLeftFlag   = 1;
+                            AdjstRightFlag  = 0;                            
                             SetDirection( LEFT_SCAN ); 
 
                         }
                         else if ((CntrFlame == 3 || CntrFlame == 4) && AdjstRightFlag == 0) // Right Sensors
                         {
 
-                            AdjstFwdFlag = 0;
-                            AdjstLeftFlag = 0;                            
-                            AdjstRightFlag = 1;
+                            AdjstFwdFlag    = 0;
+                            AdjstLeftFlag   = 0;                            
+                            AdjstRightFlag  = 1;
                             SetDirection( RIGHT_SCAN );                           
 
                         }  
@@ -217,8 +215,8 @@ void main( void )
                             SetSpeed( SUPER_SLOW );
                             SetDirection( FORWARD );     
 
-                            AdjstLeftFlag = 0;                            
-                            AdjstRightFlag = 0;  
+                            AdjstLeftFlag   = 0;                            
+                            AdjstRightFlag  = 0;  
                         }  
                         AdjstFwdFlag = 1;   
                     }
@@ -227,11 +225,11 @@ void main( void )
                         SetDirection( STALL_M1 );
                         SetDirection( STALL_M2 );
                         SetSpeed(OFF);
+                        
                         TurnFlag = 0;
-                        AdjstLeftFlag = 0;
-                        AdjstRightFlag = 0;
-                        AdjstFwdFlag = 0;                        
-
+                        AdjstLeftFlag   = 0;
+                        AdjstRightFlag  = 0;
+                        AdjstFwdFlag    = 0;                        
                         IgnFirstFlameFlag = 1;                    
 
                         State = FIRE_VERIFY;                     
@@ -260,20 +258,20 @@ void main( void )
                             FlmMidMax = SINT16_MIN;                               
                           
                             // Set up Reroute map
-                            RRouteDirection[1] = FORWARD;   
-                            RRouteDistance[0] = 0;   
-                            RRouteDistance[2] = 0;   
+                            RRouteDirection[1]  = FORWARD;   
+                            RRouteDistance[0]   = 0;   
+                            RRouteDistance[2]   = 0;   
 
                             FireSide = (FlameFirstLoc == 2 || FlameFirstLoc ==  3 || FlameFirstLoc ==  4 )? RIGHT_SIDE: LEFT_SIDE;
-                            RRouteDirection[0] = (FireSide == LEFT_SIDE)? RIGHT_45: LEFT_45;  
-                            RRouteDistance[1] = 8;
-                            RRouteDirection[2] = (FireSide == LEFT_SIDE)? LEFT_45: RIGHT_45;   
-                            DcyCllFlag = 1;        
-
-                            M1Distance = 0;
-                            M2Distance = 0;         
-                            RRIndex = 0;  
-                            RRDist = 0;
+                            RRouteDirection[0]  = (FireSide == LEFT_SIDE)? RIGHT_45: LEFT_45;  
+                            RRouteDistance[1]   = 8;
+                            RRouteDirection[2]  = (FireSide == LEFT_SIDE)? LEFT_45: RIGHT_45;   
+                            
+                            DcyCllFlag  = 1;        
+                            M1Distance  = 0;
+                            M2Distance  = 0;         
+                            RRIndex     = 0;  
+                            RRDist      = 0;
 
                             // Start Reroute
                             SetSpeed( SLOW );                  
@@ -314,12 +312,12 @@ void main( void )
                         if ( (CheckFlameDetectors() == 0) || (DesignDayBtn != 0) )
                         {                         
                             ExtinguishFlag = 0;
-                            State = IDLE;
+                            State   = IDLE;
                         }
                         else
                         {                           
-                            SecCnt = 15;
-                            State = FIRE_DETECTED;
+                            SecCnt  = 15;
+                            State   = FIRE_DETECTED;
                         }
                     }
                 }       
@@ -360,8 +358,8 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler( void )
         WaterPulseCnt++;
         if (WaterPulseCnt >= 1600) // 100 ms water pulse
         {
-            WaterPulseCnt = 0;
-            WaterPulseFlag = 0;
+            WaterPulseCnt   = 0;
+            WaterPulseFlag  = 0;
         }
     }
     
@@ -371,7 +369,7 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler( void )
         if (MtrsOffCnt > 320000) // 20 Sec of no motor mvmnt in Navigate State
         {
             MtrsOffFlag = 0;
-            MtrsOffCnt = 0;
+            MtrsOffCnt  = 0;
             State = IDLE;
         }
     }
@@ -440,18 +438,18 @@ void __ISR (8, IPL2SOFT) Timer2IntHandler( void )
             if ( (CmpltStopAfterTrnCnt == 0) && ( M1PosEdgeCnt <= 1 ) && ( M2PosEdgeCnt <= 1) )
             {      
                 // Clear Flags
-                AdjstLeftFlag = 0;
-                AdjstRightFlag = 0;  
+                AdjstLeftFlag   = 0;
+                AdjstRightFlag  = 0;  
                 AdjustSpeedFlag = 0;
                 FwdTurnDoneFlag = 0;
                 RvsTurnDoneFlag = 0;                 
                 TurnFlag = 0;
                 
                 // Clear Motor and PI values
-                M1Distance = 0;
-                M2Distance = 0;   
-                M1Integral = 0;
-                M2Integral = 0;                    
+                M1Distance  = 0;
+                M2Distance  = 0;   
+                M1Integral  = 0;
+                M2Integral  = 0;                    
                 M1PosEdgeCnt = 0;
                 M2PosEdgeCnt = 0;
                 DistanceDiff = 0;  
@@ -625,10 +623,10 @@ void __ISR (23, IPL3SOFT) ADCIntHandler( void )
    FlameSens[1] = ADC1BUF1; // AN1  Right Mid Sensor
    FlameSens[4] = ADC1BUF2; // AN6  Left Sensor
    FlameSens[3] = ADC1BUF3; // AN7  Left Mid Sensor
-   IRSens[3] = ADC1BUF4;    // AN9  Right Fwd Sensor
-   IRSens[0] = ADC1BUF5;    // AN8  Left Back Sensor
-   IRSens[1] = ADC1BUF6;    // AN11 Left Fwd Sensor
-   IRSens[2] = ADC1BUF7;    // AN10 Right Back Sensor
+   IRSens[3]    = ADC1BUF4; // AN9  Right Fwd Sensor
+   IRSens[0]    = ADC1BUF5; // AN8  Left Back Sensor
+   IRSens[1]    = ADC1BUF6; // AN11 Left Fwd Sensor
+   IRSens[2]    = ADC1BUF7; // AN10 Right Back Sensor
    FlameSens[2] = ADC1BUF8; // AN12 Middle Sensor
      
    AD1CON1bits.DONE = 0;  

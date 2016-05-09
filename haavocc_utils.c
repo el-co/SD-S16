@@ -74,9 +74,9 @@ void GPIOInit( void )
     TRISCbits.TRISC8    = 0;    // RC8 Output    Bottom LED
 
     // Buttons
-    ANSELA &= ~(0x0108);
-    TRISAbits.TRISA3 = 1;		// Butt on RA3   Battle Button
-    TRISAbits.TRISA8 = 1;		// Butt on RA8   Start Button 
+    ANSELA &= ~(0x0108);        // Clear ANSELA bits
+    TRISAbits.TRISA3    = 1;	// Butt on RA3   Battle Button
+    TRISAbits.TRISA8    = 1;	// Butt on RA8   Start Button 
     
     // ADC Pins
     // Flame Sensors
@@ -110,12 +110,12 @@ void GPIOInit( void )
     TRISBbits.TRISB10   = 0;	// RB10         - INB2
     
     // IC Pins
-    TRISBbits.TRISB5 = 1;       // RB5 Input
-    TRISCbits.TRISC5 = 1;       // RC5 Input
-    TRISCbits.TRISC6 = 1;       // RC6 Input   
+    TRISBbits.TRISB5    = 1;    // RB5 Input
+    TRISCbits.TRISC5    = 1;    // RC5 Input
+    TRISCbits.TRISC6    = 1;    // RC6 Input   
     
     // Solenoid
-    TRISCbits.TRISC4 = 0;    	//  RPC4 Output
+    TRISCbits.TRISC4    = 0;    //  RPC4 Output
 }
 
 //****************************************************************************
@@ -131,16 +131,13 @@ void GPIOInit( void )
 void TimerInit( void )
 {
     // TIMER 2
-    PR2 = 0x09C4;       // 16KHz 62.5us
-    TMR2 = 0;           // Reset TMR2 to 0        
+    PR2 = 0x09C4;               // 16KHz 62.5us
+    TMR2 = 0;                   // Reset TMR2 to 0        
     
-    IEC0bits.T2IE = 0;  // TMR2 Interrupt Disable 
-    IFS0bits.T2IF = 0;  // TMR2 Interrupt Flag Off
-    IPC2bits.T2IP = 2;  // TMR2 Interrupt Priority
-    IEC0bits.T2IE = 1;  // TMR2 Interrupt Enable         
+    IEC0bits.T2IE = 0;          // TMR2 Interrupt Disable 
+    IFS0bits.T2IF = 0;          // TMR2 Interrupt Flag Off
+    IPC2bits.T2IP = 2;          // TMR2 Interrupt Priority
  
-    T2CON = 0x8000;     // TMR2 Start
-    
     // TIMER 3
     T3CONbits.TCKPS = 0b110;    // 1:64 prescaler
     PR3 = 0x77A1;               // 20.408Hz 49ms
@@ -149,20 +146,23 @@ void TimerInit( void )
     IEC0bits.T3IE = 0;          // TMR3 Interrupt Disable 
     IFS0bits.T3IF = 0;          // TMR3 Interrupt Flag Off
     IPC3bits.T3IP = 2;          // TMR3 Interrupt Priority
-    IEC0bits.T3IE = 1;          // TMR3 Interrupt Enable         
  
-    T3CONbits.ON = 1;           // TMR3 Start
-    
     // TIMER 4
     T4CONbits.TCKPS = 0b111;    // 1:256 prescaler
     PR4 = 0x2BF2;               // 13.89Hz 72ms    
-    TMR4 = 0;                   // Reset TMR3 to 0 
+    TMR4 = 0;                   // Reset TMR4 to 0 
     
     IEC0bits.T4IE = 0;          // TMR4 Interrupt Disable 
     IFS0bits.T4IF = 0;          // TMR4 Interrupt Flag Off
     IPC4bits.T4IP = 2;          // TMR4 Interrupt Priority
+
+    IEC0bits.T2IE = 1;          // TMR2 Interrupt Enable             
+    IEC0bits.T3IE = 1;          // TMR3 Interrupt Enable          
     IEC0bits.T4IE = 1;          // TMR4 Interrupt Enable    
-    T4CONbits.ON = 1;
+ 
+    T2CON = 0x8000;             // TMR2 Start    
+    T3CONbits.ON  = 1;          // TMR3 Start
+    T4CONbits.ON  = 1;          // TMR4 Start
 }
 
 //****************************************************************************
@@ -182,14 +182,14 @@ void PWMInit( void )
     
     OC2CON = 0x0000;            // OC2 Disable
     OC2CON = 0x0006;            // OCM PWM mode   
-    OC2RS = 0;                  // OC2 Secondary Compare Register
+    OC2RS  = 0;                 // OC2 Secondary Compare Register
                                
     OC4CON = 0x0000;            // OC4 Disable
     OC4CON = 0x0006;            // OCM PWM mode   
-    OC4RS = 0;                  // OC4 Secondary Compare Register
+    OC4RS  = 0;                 // OC4 Secondary Compare Register
   
-    OC2CONSET = 0x8000;         // OC2 Enable
-    OC4CONSET = 0x8000;         // OC4 Enable   
+    OC2CONbits.ON = 1;          // OC2 Enable
+    OC4CONbits.ON = 1;          // OC4 Enable   
 }
 
 //****************************************************************************
@@ -223,9 +223,9 @@ void ADCInit( void )
     AD1CSSLbits.CSSL7 = 1;      // Select ANx for input scan - AN7
     AD1CSSLbits.CSSL8 = 1;      // Select ANx for input scan - AN8
     AD1CSSLbits.CSSL9 = 1;      // Select ANx for input scan - AN9 
-    AD1CSSLbits.CSSL10 = 1;      // Select ANx for input scan - AN10 
-    AD1CSSLbits.CSSL11 = 1;      // Select ANx for input scan - AN11 
-    AD1CSSLbits.CSSL12 = 1;      // Select ANx for input scan - AN12
+    AD1CSSLbits.CSSL10 = 1;     // Select ANx for input scan - AN10 
+    AD1CSSLbits.CSSL11 = 1;     // Select ANx for input scan - AN11 
+    AD1CSSLbits.CSSL12 = 1;     // Select ANx for input scan - AN12
      
     IEC0bits.AD1IE = 0 ;        // AD1 Interrupt Enable Off
     IFS0bits.AD1IF = 0 ;        // AD1 Interrupt Flag Off
@@ -307,74 +307,74 @@ void ClearVariables( void )
 {
     // Solenoid Off
     LATCbits.LATC4 = 0; 
+   
+    // Clear counts
+    FlmDataCnt           = 0;
+    USSensEdgeCnt        = 0;
+    WaitForAcclCnt       = 0;
+    M1PosEdgeCnt         = 0;
+    M2PosEdgeCnt         = 0;
+    FwdTurnCnt           = 0;
+    RvsTurnCnt           = 0;
+    WaterPulseCnt        = 0;
+    SecCnt               = 0;
+    IRSensCnt            = 0;              
+    CmpltStopAfterTrnCnt = 0;
+    WallFollowInitCnt    = 0;
+    MtrsOffCnt           = 0; 
     
     // Clear flags
-    SensorEvalFlag = 0;
-    USSensorFlag = 0;
-    AdjustSpeedFlag = 0;
-    ExtinguishFlag = 0;
-    TurnFlag = 0;    
-    FwdTurnDoneFlag = 0;
-    RvsTurnDoneFlag = 0;
-    MapDoneFlag = 0;
-    WaterPulseFlag = 0;
-    M2FasterFlag = 0;   
-    M1FasterFlag = 0;
-    FrntSensFlag = 0;
-    AdjstLeftFlag = 0;
-    AdjstRightFlag = 0;
-    AdjstFwdFlag = 0;    
-    MtrsOffFlag = 0;
-    WFInitFlag = 0;
-    WFRunFlag = 0;
-    CnslChckFlag = 0;
-    WallCllFlag = 0;  
-    DcyCllFlag = 0;   
-    ExitRoomFlag = 0;    
-    IgnFirstFlameFlag = 0;
-    DesignDayBtn = 0;
-    
-    // Clear counts
-    FlmDataCnt = 0;
-    USSensEdgeCnt = 0;
-    WaitForAcclCnt = 0;
-    M1PosEdgeCnt = 0;
-    M2PosEdgeCnt = 0;
-    FwdTurnCnt = 0;
-    RvsTurnCnt = 0;
-    WaterPulseCnt = 0;
-    SecCnt = 0;
-    IRSensCnt = 0;              
-    CmpltStopAfterTrnCnt = 0;
-    WallFollowInitCnt = 0;
-    MtrsOffCnt = 0;      
-    
+    SensorEvalFlag      = 0;
+    USSensorFlag        = 0;
+    AdjustSpeedFlag     = 0;
+    ExtinguishFlag      = 0;
+    TurnFlag            = 0;    
+    FwdTurnDoneFlag     = 0;
+    RvsTurnDoneFlag     = 0;
+    MapDoneFlag         = 0;
+    WaterPulseFlag      = 0;
+    M2FasterFlag        = 0;   
+    M1FasterFlag        = 0;
+    FrntSensFlag        = 0;
+    AdjstLeftFlag       = 0;
+    AdjstRightFlag      = 0;
+    AdjstFwdFlag        = 0;    
+    MtrsOffFlag         = 0;
+    WFInitFlag          = 0;
+    WFRunFlag           = 0;
+    CnslChckFlag        = 0;
+    WallCllFlag         = 0;  
+    DcyCllFlag          = 0;   
+    ExitRoomFlag        = 0;    
+    IgnFirstFlameFlag   = 0;
+    DesignDayBtn        = 0;
+
     // Clear variables
-    Motor1Speed = 0;
-    Motor2Speed = 0;
-    M1Integral = 0;
-    M2Integral = 0;
-    M1Distance = 0;
-    M2Distance = 0;
-    MapIndex = 0;
-    MapDist = 0;  
-    RRIndex = 0;
-    RRDist = 0;
-    FwdTurnDist = 0;
-    RvsTurnDist = 0;
-    USSensPosEdgeTime = 0;
-    USSensNegEdgeTime = 0;   
-    USSensDiff = 0;
+    Motor1Speed         = 0;
+    Motor2Speed         = 0;
+    M1Integral          = 0;
+    M2Integral          = 0;
+    M1Distance          = 0;
+    M2Distance          = 0;
+    MapIndex            = 0;
+    MapDist             = 0;  
+    RRIndex             = 0;
+    RRDist              = 0;
+    FwdTurnDist         = 0;
+    RvsTurnDist         = 0;
+    USSensPosEdgeTime   = 0;
+    USSensNegEdgeTime   = 0;   
+    USSensDiff          = 0;
     
     // Reset variables
-    FlmMidMin = SINT16_MAX;
-    FlmMidMax = SINT16_MIN;       
+    FlmMidMin       = SINT16_MAX;
+    FlmMidMax       = SINT16_MIN;       
     M1_SuperSlowPWM = SUPER_SLOW_SPEED_INIT;
     M2_SuperSlowPWM = SUPER_SLOW_SPEED_INIT + 40;    
-    M1_SlowPWM = SLOW_SPEED_INIT;
-    M2_SlowPWM = SLOW_SPEED_INIT + 40;
-    M1_MedPWM = MED_SPEED_INIT;
-    M2_MedPWM = MED_SPEED_INIT + 30;      
+    M1_SlowPWM      = SLOW_SPEED_INIT;
+    M2_SlowPWM      = SLOW_SPEED_INIT + 40;
+    M1_MedPWM       = MED_SPEED_INIT;
+    M2_MedPWM       = MED_SPEED_INIT + 30;      
 }
 
 //****************************************************************************
@@ -389,98 +389,98 @@ void ClearVariables( void )
 //****************************************************************************
 void MapInit( void )
 {
-    MapDistance[0] = 40; 
+    MapDistance[0]  = 40; 
     MapDirection[0] = FORWARD;    
-    MapDistance[1] = 26; 
+    MapDistance[1]  = 26; 
     MapDirection[1] = FORWARD;     
-    MapDistance[2] = 1;
-    MapDirection[2] = FORWARD;  // check left sensors for Room 1 Door 
+    MapDistance[2]  = 1;
+    MapDirection[2] = FORWARD;      // Check left sensors for Room 1 Door 
     
-    MapDistance[3] = 0;
-    MapDirection[3] = LEFT_45; // enter room
+    MapDistance[3]  = 0;
+    MapDirection[3] = LEFT_45;      // Enter room
     
-    MapDistance[4] = 25;
+    MapDistance[4]  = 25;
     MapDirection[4] = FORWARD; 
     
-    MapDistance[5] = 0;
-    MapDirection[5] = LEFT_45; // start center console
+    MapDistance[5]  = 0;
+    MapDirection[5] = LEFT_45;      // Start center console
     
-    MapDistance[6] = 20;
+    MapDistance[6]  = 20;
     MapDirection[6] = FORWARD;
-    MapDistance[7] = 10;
+    MapDistance[7]  = 10;
     MapDirection[7] = FORWARD;
-    MapDistance[8] = 5;
+    MapDistance[8]  = 5;
     MapDirection[8] = FORWARD;
     
-    MapDistance[9] = 0;
-    MapDirection[9] = RIGHT_90; 
+    MapDistance[9]  = 0;
+    MapDirection[9] = RIGHT_90;     // First console turn
     
-    MapDistance[10] = 8;
+    MapDistance[10]  = 8;
     MapDirection[10] = FORWARD; 
-    MapDistance[11] = 13;
+    MapDistance[11]  = 13;
     MapDirection[11] = FORWARD; 
-    MapDistance[12] = 5;
+    MapDistance[12]  = 5;
     MapDirection[12] = FORWARD; 
     
-    MapDistance[13] = 0;
-    MapDirection[13] = RIGHT_90;
+    MapDistance[13]  = 0;
+    MapDirection[13] = RIGHT_90;    // Second console turn
 
-    MapDistance[14] = 8;
+    MapDistance[14]  = 8;
     MapDirection[14] = FORWARD; 
-    MapDistance[15] = 10;
+    MapDistance[15]  = 10;
     MapDirection[15] = FORWARD;     
-    MapDistance[16] = 5;
+    MapDistance[16]  = 5;
     MapDirection[16] = FORWARD; 
     
-    MapDistance[17] = 0;     
-    MapDirection[17] = RIGHT_90; 
+    MapDistance[17]  = 0;     
+    MapDirection[17] = RIGHT_90;     // Third console turn 
  
-    MapDistance[18] = 8;
+    MapDistance[18]  = 8;
     MapDirection[18] = FORWARD; 
-    MapDistance[19] = 13;
+    MapDistance[19]  = 13;
     MapDirection[19] = FORWARD;     
-    MapDistance[20] = 18;
+    MapDistance[20]  = 18;
     MapDirection[20] = FORWARD; 
     
-    MapDistance[21] = 0;
+    MapDistance[21]  = 0;
     MapDirection[21] = LEFT_90;  
     
-    MapDistance[22] = 28;
-    MapDirection[22] = FORWARD; // Room 1 Exit    
+    MapDistance[22]  = 28;
+    MapDirection[22] = FORWARD;     // Room 1 Exit    
     
-    MapDistance[23] = 0;
+    MapDistance[23]  = 0;
     MapDirection[23] = LEFT_90;  
     
-    MapDistance[24] = 10;
+    MapDistance[24]  = 10;
     MapDirection[24] = FORWARD;     
-    MapDistance[25] = 53;
-    MapDirection[25] = FORWARD; // check left sensors for  Room 2 Door    
-    MapDistance[26] = 66;
-    MapDirection[26] = FORWARD; // check left sensors for Room 3 Door     
-    MapDistance[27] = 50;
+    MapDistance[25]  = 53;
+    MapDirection[25] = FORWARD;     // Check left sensors for  Room 2 Door    
+    MapDistance[26]  = 66;
+    MapDirection[26] = FORWARD;     // Check left sensors for Room 3 Door     
+    MapDistance[27]  = 50;
     MapDirection[27] = FORWARD;
     
-    MapDistance[28] = 0;
-    MapDirection[28] = TURN_180; // End of Hall
+    MapDistance[28]  = 0;
+    MapDirection[28] = TURN_180;    // End of Hall
     
-    MapDistance[29] = 50;
-    MapDirection[29] = FORWARD; // check right sensors for Room 3 Door    
-    MapDistance[30] = 66;
-    MapDirection[30] = FORWARD; // check right sensors for Room 2 Door 
-    MapDistance[31] = 63;
-    MapDirection[31] = FORWARD; // check right sensors for Room 1 Door 
-    MapDistance[32] = 13;
+    MapDistance[29]  = 50;
+    MapDirection[29] = FORWARD;     // Check right sensors for Room 3 Door    
+    MapDistance[30]  = 66;
+    MapDirection[30] = FORWARD;     // Check right sensors for Room 2 Door 
+    MapDistance[31]  = 63;
+    MapDirection[31] = FORWARD;     // Check right sensors for Room 1 Door 
+    MapDistance[32]  = 13;
     MapDirection[32] = FORWARD;       
-    MapDistance[33] = 0;
-    MapDirection[33] = RIGHT_45;  // 45 degree angle ish  
-    MapDistance[34] = 18;
+    MapDistance[33]  = 0;
+    MapDirection[33] = RIGHT_45;    // Small hallway turn
+    MapDistance[34]  = 18;
     MapDirection[34] = FORWARD;     
-    MapDistance[35] = 0;
-    MapDirection[35] = LEFT_45;  // 45 degree angle ish      
-    MapDistance[36] = 40;
+    MapDistance[35]  = 0;
+    MapDirection[35] = LEFT_45;     // Small hallway turn    
+    MapDistance[36]  = 40;
     MapDirection[36] = FORWARD; 
-    MapDistance[37] = 0;
-    MapDirection[37] = FORWARD;  // Back at start
+    MapDistance[37]  = 0;
+    MapDirection[37] = FORWARD;     // Back at start
 }
 
 //****************************************************************************
@@ -536,15 +536,15 @@ void MotorDirectionCtrl( uint8 LDirection, uint8 RDirection)
     switch (RDirection)
     {
         case RVS:
-            LATBbits.LATB7 = FWD;    
+            LATBbits.LATB7  = FWD;    
             LATBbits.LATB10 = RVS;                   
             break;
         case FWD:
-            LATBbits.LATB7 = RVS;       
+            LATBbits.LATB7  = RVS;       
             LATBbits.LATB10 = FWD;     
             break;
         case STLL:
-            LATBbits.LATB7 = FWD;     
+            LATBbits.LATB7  = FWD;     
             LATBbits.LATB10 = FWD;                    
             break;
         case IGN:               
@@ -581,6 +581,7 @@ uint16 PI( uint16 ActualEncoder, uint16 TrgtEncoder, uint8 Motor )
     error = TrgtEncoder - ActualEncoder;
     Integral = (Motor == MOTOR_1)? M1Integral: M2Integral;
     
+    // PI function
     PWM = (Kp * error) + (Ki * Integral);    
   
     // add 0.5 for rounding    
@@ -898,9 +899,9 @@ uint32 CenterFlame( void )
         {
             MaxHighest = FlameSens[i];
             ActualCenter = i;
-            
         }            
     }
+   
     // Match up the two sensors on each side of middle sensor
     if (ActualCenter == CENTER_FLAME)
     {
@@ -939,7 +940,8 @@ void CheckMap( void )
 
         MapIndex++;    
        
-        // Initialize any sensor verifications throughout map
+        // Initialize sensor verifications throughout map
+        // Wall following, Console edge checking and front sensor distance check
         if ( MapIndex == 7 || MapIndex == 11 || MapIndex == 15 ||  MapIndex == 19 )
         {
             WFInitFlag = 1; // will set WFRun
