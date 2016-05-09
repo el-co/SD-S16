@@ -64,16 +64,16 @@ void main( void )
             case START:
                 LATCbits.LATC8 = 0;
                 
-                // Reset values as needed                
-                ClearVariables();               
-                MapInit();
-                
                 // Set direction pins and speed                   
                 SetSpeed( OFF );    
                 SetDirection( FORWARD );      
             
                 if (SecCnt == 0)
-                {                
+                {     
+                    // Reset values as needed                
+                    ClearVariables();               
+                    MapInit();
+                                    
                     // Reset Reroute values
                     RRouteDirection[1]  = FORWARD;   
                     RRouteDistance[0]   = 0;   
@@ -324,6 +324,7 @@ void main( void )
                 
                 break;            
             default:
+                ClearVariables(); 
                 SetSpeed( OFF );    
                 SetDirection( FORWARD );                     
                 State = IDLE;

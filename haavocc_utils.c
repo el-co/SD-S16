@@ -36,20 +36,7 @@ void Init( void )
     
     SetSpeed( OFF );    
     SetDirection( FORWARD );      
-    MotorSpeedCtrl( Motor1Speed, Motor2Speed );     
-    M1Distance = 0;
-    M2Distance = 0;
     
-    ExtinguishFlag = 0;
-    MapIndex = 0;
-    
-    // Initial PWM Speeds
-    M1_SuperSlowPWM = SUPER_SLOW_SPEED_INIT;
-    M2_SuperSlowPWM = SUPER_SLOW_SPEED_INIT + 40;    
-    M1_SlowPWM = SLOW_SPEED_INIT;
-    M2_SlowPWM = SLOW_SPEED_INIT + 40;
-    M1_MedPWM = MED_SPEED_INIT;
-    M2_MedPWM = MED_SPEED_INIT + 30;
 }
 
 //****************************************************************************
@@ -305,8 +292,11 @@ void ICInit( void )
 //****************************************************************************
 void ClearVariables( void )
 {
-    // Solenoid Off
-    LATCbits.LATC4 = 0; 
+    // Clear pins
+    LATCbits.LATC7  = 0;    // PCB LED  
+    LATAbits.LATA7  = 0;    // Left LED
+    LATBbits.LATB9  = 0;    // Right LED
+    LATCbits.LATC4  = 0;    // Solenoid Pin Off    
    
     // Clear counts
     FlmDataCnt           = 0;
